@@ -834,72 +834,164 @@
             <div class="dashboard-card tank-visual-card">
               <div class="card-header-flex">
                 <div class="card-title-group">
-                  <h3><i class="fa-solid fa-cubes-stacked"></i> Smart Water Reservoir & Visual Level Gauge</h3>
-                  <p>Real-time physical reservoir telemetry and level tracking</p>
+                  <h3><i class="fa-solid fa-cubes-stacked"></i> Smart Dual-Tank Reservoir & Automated Overflow Diversion</h3>
+                  <p>Real-time physical telemetry, automatic overflow routing & auxiliary tank capture</p>
                 </div>
-                <div class="tank-badge-live" id="tankStateBadge">
-                  <span class="badge-dot pulse"></span> <span id="tankStateText">Optimal Level</span>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                  <div class="tank-badge-live" id="tankStateBadge">
+                    <span class="badge-dot pulse"></span> <span id="tankStateText">Optimal Level</span>
+                  </div>
+                  <span class="badge badge-light"><i class="fa-solid fa-microchip"></i> Simulation Mode</span>
                 </div>
               </div>
 
-              <!-- Interactive Tank Graphic Container -->
-              <div class="tank-graphic-stage">
+              <!-- Interactive Dual-Tank Graphic Container -->
+              <div class="dual-tank-stage" id="dualTankStage">
 
-                <div class="tank-container-shell">
-                  <!-- Measurement Ticks -->
-                  <div class="tank-ticks">
-                    <span>100% (Full)</span>
-                    <span>75%</span>
-                    <span>50%</span>
-                    <span>25%</span>
-                    <span>0% (Empty)</span>
+                <!-- Primary Tank Column -->
+                <div class="tank-col">
+                  <div class="tank-col-header">
+                    <span><i class="fa-solid fa-box-archive text-primary"></i> Primary Tank</span>
+                    <span class="badge badge-primary" id="primaryTankBadge">10,000 L (68%)</span>
                   </div>
 
-                  <!-- The Physical Water Vessel -->
-                  <div class="tank-body">
-                    <div class="tank-inflow-pipe" id="tankInflowPipe">
-                      <div class="water-stream" id="waterStream"></div>
+                  <div class="tank-container-shell">
+                    <div class="tank-ticks">
+                      <span>100%</span>
+                      <span>75%</span>
+                      <span>50%</span>
+                      <span>25%</span>
+                      <span>0%</span>
                     </div>
 
-                    <!-- Water Wave Fill -->
-                    <div class="tank-water-mass" id="tankWaterMass" style="height: 68%;">
-                      <div class="water-wave wave1"></div>
-                      <div class="water-wave wave2"></div>
-                      <div class="water-bubbles">
-                        <span></span><span></span><span></span><span></span><span></span>
+                    <div class="tank-body">
+                      <!-- Inflow Pipe from Roof -->
+                      <div class="tank-inflow-pipe" id="tankInflowPipe">
+                        <div class="water-stream" id="waterStream"></div>
                       </div>
-                      <div class="water-center-label">
-                        <strong id="tankGraphicLiters">6,800 L</strong>
-                        <span id="tankGraphicPct">68% Capacity</span>
-                      </div>
-                    </div>
 
-                    <!-- Overflow Pipe -->
-                    <div class="tank-overflow-pipe" id="tankOverflowPipe">
-                      <span class="pipe-label">Overflow Outflow</span>
+                      <!-- Water Wave Fill -->
+                      <div class="tank-water-mass" id="tankWaterMass" style="height: 68%;">
+                        <div class="water-wave wave1"></div>
+                        <div class="water-wave wave2"></div>
+                        <div class="water-bubbles">
+                          <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="water-center-label">
+                          <strong id="tankGraphicLiters">6,800 L</strong>
+                          <span id="tankGraphicPct">68% Capacity</span>
+                        </div>
+                      </div>
+
+                      <!-- Primary Overflow Nozzle -->
+                      <div class="tank-overflow-pipe" id="tankOverflowPipe">
+                        <span class="pipe-label">Divert</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
+                <!-- Interconnecting Smart Automated Diversion Junction -->
+                <div class="diversion-junction" id="diversionJunction">
+                  <div class="diversion-valve-box" id="diversionValveBox">
+                    <i class="fa-solid fa-faucet-drip text-primary" id="diversionValveIcon"></i>
+                    <span class="valve-badge" id="diversionValveBadge">VALVE: STANDBY</span>
+                    <small id="diversionFlowRate" style="font-size: 0.62rem; color: var(--slate-500); font-weight: 600;">0 L/min Transfer</small>
+                  </div>
+
+                  <div class="diversion-pipe-conduit">
+                    <div class="diversion-water-stream" id="diversionFlowStream"></div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.3rem;">
+                    <i class="fa-solid fa-angles-right diversion-arrow" id="diversionArrow"></i>
+                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--slate-600); text-transform: uppercase;">Overflow Diverter</span>
+                  </div>
+                </div>
+
+                <!-- Secondary Tank Column -->
+                <div class="tank-col">
+                  <div class="tank-col-header">
+                    <span><i class="fa-solid fa-boxes-stacked text-teal"></i> Secondary Tank</span>
+                    <span class="badge badge-secondary" id="secondaryTankBadge">5,000 L (24%)</span>
+                  </div>
+
+                  <div class="tank-container-shell">
+                    <div class="tank-ticks">
+                      <span>100%</span>
+                      <span>75%</span>
+                      <span>50%</span>
+                      <span>25%</span>
+                      <span>0%</span>
+                    </div>
+
+                    <div class="tank-body">
+                      <!-- Diverted Inflow Pipe from Valve -->
+                      <div class="tank-inflow-pipe" id="secondaryInflowPipe" style="left: auto; right: 25px;">
+                        <div class="water-stream" id="secondaryWaterStream"></div>
+                      </div>
+
+                      <!-- Water Wave Fill (Secondary Cyan Gradient) -->
+                      <div class="tank-water-mass secondary-water" id="tank2WaterMass" style="height: 24%;">
+                        <div class="water-wave wave1"></div>
+                        <div class="water-wave wave2"></div>
+                        <div class="water-bubbles">
+                          <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="water-center-label">
+                          <strong id="tank2GraphicLiters">1,200 L</strong>
+                          <span id="tank2GraphicPct">24% Capacity</span>
+                        </div>
+                      </div>
+
+                      <!-- Secondary Overflow Nozzle to Recharge Pit -->
+                      <div class="tank-overflow-pipe" id="secondaryOverflowPipe">
+                        <span class="pipe-label">Recharge</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tertiary Overflow / Aquifer Recharge Node -->
+                <div class="tertiary-recharge-node" id="tertiaryRechargeNode">
+                  <i class="fa-solid fa-water"></i>
+                  <strong id="rechargeStatusText" style="font-size: 0.7rem; color: var(--slate-800);">Recharge Standby</strong>
+                  <span id="rechargeSpillVol" style="font-size: 0.62rem; color: var(--slate-500);">0 L spilled</span>
+                  <span style="font-size: 0.58rem; color: var(--slate-400); margin-top: 0.2rem;">Percolation Pit</span>
+                </div>
+
               </div>
 
-              <!-- Tank Status Quick Bar -->
+              <!-- Real-Time Diversion Status & Disclaimer Banner -->
+              <div class="diversion-live-banner" id="diversionLiveBanner">
+                <div class="diversion-banner-content">
+                  <i class="fa-solid fa-shuffle" id="diversionBannerIcon"></i>
+                  <span id="diversionBannerText"><strong>Smart Valve: STANDBY</strong> &bull; Primary tank has available space. Secondary auxiliary tank is ready to receive overflow.</span>
+                </div>
+                <span class="badge badge-light" style="font-size: 0.68rem; white-space: nowrap;"><i class="fa-solid fa-code"></i> Software Simulation Mode</span>
+              </div>
+
+              <!-- Tank Status Quick Bar: Total Stored & Remaining Capacity -->
               <div class="tank-status-metrics">
                 <div class="ts-box">
-                  <span class="ts-lbl">Water Volume</span>
-                  <strong class="ts-val" id="tankValStored">6,800 L</strong>
+                  <span class="ts-lbl">Total Stored Water</span>
+                  <strong class="ts-val" id="tankValStored">8,000 L</strong>
+                  <span class="ts-detail" id="tsDetailStored">P: 6,800 L | S: 1,200 L</span>
                 </div>
                 <div class="ts-box">
-                  <span class="ts-lbl">Available Space</span>
-                  <strong class="ts-val" id="tankValHeadroom">3,200 L</strong>
+                  <span class="ts-lbl">Remaining Capacity</span>
+                  <strong class="ts-val" id="tankValHeadroom">7,000 L</strong>
+                  <span class="ts-detail" id="tsDetailHeadroom">P: 3,200 L | S: 3,800 L</span>
                 </div>
                 <div class="ts-box">
-                  <span class="ts-lbl">Fill Percentage</span>
-                  <strong class="ts-val" id="tankValPct">68.0%</strong>
+                  <span class="ts-lbl">Total Fill Percentage</span>
+                  <strong class="ts-val" id="tankValPct">53.3%</strong>
+                  <span class="ts-detail" id="tsDetailPct">Dual Reservoir Combined</span>
                 </div>
                 <div class="ts-box">
                   <span class="ts-lbl">Autonomy Days</span>
-                  <strong class="ts-val" id="tankValDays">12.6 Days</strong>
+                  <strong class="ts-val" id="tankValDays">14.8 Days</strong>
+                  <span class="ts-detail" id="tsDetailDays">Reserve Runway</span>
                 </div>
               </div>
 
@@ -952,40 +1044,132 @@
                 </div>
               </div>
 
-              <!-- Tank Configuration Card -->
+              <!-- Dual Tank Capacity & Sizing Configuration Card -->
               <div class="dashboard-card">
                 <div class="card-header-flex">
                   <div class="card-title-group">
-                    <h3><i class="fa-solid fa-sliders"></i> Tank Sizing & Thresholds</h3>
-                    <p>Modify storage specifications and available capacity</p>
+                    <h3><i class="fa-solid fa-sliders"></i> Dual Tank Sizing & Capacity Settings</h3>
+                    <p>Configure capacities and current levels for Primary & Secondary tanks</p>
                   </div>
                 </div>
 
-                <div class="tank-form">
-                  <div class="form-group">
-                    <label for="tankCapacityInput"><i class="fa-solid fa-boxes-stacked"></i> Total Tank Capacity
-                      (Liters)</label>
-                    <div class="input-with-button">
-                      <input type="number" id="tankCapacityInput" class="form-control" value="10000" min="500"
-                        max="500000" step="500">
-                      <button class="btn btn-outline" id="btnUpdateCapacity">Update</button>
+                <!-- Hidden inputs for backward compatibility with automated test scripts -->
+                <input type="hidden" id="tankCapacityInput" value="15000">
+                <input type="hidden" id="tankCurrentInput" value="8000">
+                <button id="btnUpdateCapacity" style="display: none;"></button>
+                <button id="btnSetCurrentLevel" style="display: none;"></button>
+
+                <div class="dual-tank-config-grid">
+                  <!-- Primary Tank Settings -->
+                  <div class="tank-config-subcard">
+                    <h4><i class="fa-solid fa-box-archive text-primary"></i> Primary Tank (Main)</h4>
+
+                    <div class="form-group" style="margin-bottom: 0.65rem;">
+                      <label for="primaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity (Liters)</label>
+                      <div class="input-with-button">
+                        <input type="number" id="primaryTankCapacityInput" class="form-control" value="10000" min="500" max="500000" step="500">
+                        <button class="btn btn-outline btn-sm" id="btnUpdatePrimaryCap">Save</button>
+                      </div>
+                      <div class="quick-cap-chips">
+                        <button type="button" class="btn-chip" data-target="primary" data-cap="2000">2k</button>
+                        <button type="button" class="btn-chip" data-target="primary" data-cap="5000">5k</button>
+                        <button type="button" class="btn-chip active" data-target="primary" data-cap="10000">10k</button>
+                        <button type="button" class="btn-chip" data-target="primary" data-cap="25000">25k</button>
+                        <button type="button" class="btn-chip" data-target="primary" data-cap="50000">50k</button>
+                      </div>
                     </div>
-                    <div class="quick-cap-chips">
-                      <button type="button" class="btn-chip" data-cap="2000">2,000 L</button>
-                      <button type="button" class="btn-chip" data-cap="5000">5,000 L</button>
-                      <button type="button" class="btn-chip active" data-cap="10000">10,000 L</button>
-                      <button type="button" class="btn-chip" data-cap="25000">25,000 L</button>
-                      <button type="button" class="btn-chip" data-cap="50000">50,000 L</button>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label for="primaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level (Liters)</label>
+                      <div class="input-with-button">
+                        <input type="number" id="primaryTankCurrentInput" class="form-control" value="6800" min="0" max="500000" step="100">
+                        <button class="btn btn-primary btn-sm" id="btnSetPrimaryLevel">Set</button>
+                      </div>
                     </div>
                   </div>
 
-                  <div class="form-group">
-                    <label for="tankCurrentInput"><i class="fa-solid fa-water"></i> Manual Current Water Level
-                      (Liters)</label>
-                    <div class="input-with-button">
-                      <input type="number" id="tankCurrentInput" class="form-control" value="6800" min="0" max="500000"
-                        step="100">
-                      <button class="btn btn-primary" id="btnSetCurrentLevel">Set Level</button>
+                  <!-- Secondary Tank Settings -->
+                  <div class="tank-config-subcard">
+                    <h4><i class="fa-solid fa-boxes-stacked text-teal"></i> Secondary Tank (Auxiliary)</h4>
+
+                    <div class="form-group" style="margin-bottom: 0.65rem;">
+                      <label for="secondaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity (Liters)</label>
+                      <div class="input-with-button">
+                        <input type="number" id="secondaryTankCapacityInput" class="form-control" value="5000" min="500" max="500000" step="500">
+                        <button class="btn btn-outline btn-sm" id="btnUpdateSecondaryCap">Save</button>
+                      </div>
+                      <div class="quick-cap-chips">
+                        <button type="button" class="btn-chip" data-target="secondary" data-cap="1000">1k</button>
+                        <button type="button" class="btn-chip" data-target="secondary" data-cap="2500">2.5k</button>
+                        <button type="button" class="btn-chip active" data-target="secondary" data-cap="5000">5k</button>
+                        <button type="button" class="btn-chip" data-target="secondary" data-cap="10000">10k</button>
+                        <button type="button" class="btn-chip" data-target="secondary" data-cap="20000">20k</button>
+                      </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                      <label for="secondaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level (Liters)</label>
+                      <div class="input-with-button">
+                        <input type="number" id="secondaryTankCurrentInput" class="form-control" value="1200" min="0" max="500000" step="100">
+                        <button class="btn btn-primary btn-sm" id="btnSetSecondaryLevel">Set</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Smart Automated Overflow Diversion Simulation Studio -->
+              <div class="dashboard-card diversion-sim-studio">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-shuffle text-primary"></i> Smart Overflow Diversion Simulator</h3>
+                    <p>Demonstrate automated diversion when Primary fills, Secondary captures, & spill infiltrates</p>
+                  </div>
+                  <span class="badge badge-success"><i class="fa-solid fa-play"></i> Interactive Simulator</span>
+                </div>
+
+                <div class="diversion-sim-actions">
+                  <button class="btn btn-primary btn-sm" id="btnRunDiversionDemo">
+                    <i class="fa-solid fa-play"></i> Run Animated Diversion Demo
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="btnSurgeInflow">
+                    <i class="fa-solid fa-cloud-bolt"></i> Inject +5,000 L Storm Pulse
+                  </button>
+                  <button class="btn btn-outline btn-sm" id="btnResetDiversionDemo">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Demo Levels
+                  </button>
+                </div>
+
+                <!-- Custom Inflow Tester -->
+                <div class="diversion-custom-test-bar">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-700);"><i class="fa-solid fa-droplet text-blue"></i> Test Inflow:</span>
+                  <input type="number" id="diversionTestInflowInput" class="form-control" value="8000" min="100" max="100000" step="500" style="max-width: 120px; font-size: 0.82rem;">
+                  <span class="unit-text" style="font-size: 0.8rem; font-weight: 700;">Liters</span>
+                  <button class="btn btn-outline btn-sm" id="btnApplyTestInflow">Simulate & Divert</button>
+                </div>
+
+                <!-- Live Dynamic Diversion Breakdown Ledger -->
+                <div class="diversion-ledger-box">
+                  <div class="diversion-ledger-header">
+                    <span><i class="fa-solid fa-calculator"></i> Diversion Calculation Breakdown</span>
+                    <span id="ledgerStatusTag" class="badge badge-light" style="font-size: 0.65rem;">Standby</span>
+                  </div>
+                  <div class="diversion-ledger-steps">
+                    <div class="d-step">
+                      <span>Incoming Water</span>
+                      <strong id="ledgerInflowVal">8,000 L</strong>
+                    </div>
+                    <div class="d-step to-primary">
+                      <span>Stored in Primary</span>
+                      <strong id="ledgerPrimaryVal">+3,200 L</strong>
+                    </div>
+                    <div class="d-step to-secondary">
+                      <span>Diverted to Sec</span>
+                      <strong id="ledgerSecondaryVal">+4,800 L</strong>
+                    </div>
+                    <div class="d-step to-spill">
+                      <span>Recharge Spill</span>
+                      <strong id="ledgerSpillVal">0 L</strong>
                     </div>
                   </div>
                 </div>
@@ -995,8 +1179,8 @@
               <div class="dashboard-card">
                 <div class="card-header-flex">
                   <div class="card-title-group">
-                    <h3><i class="fa-solid fa-bolt-lightning"></i> Live Water Operations</h3>
-                    <p>Simulate storm inflows, daily drain cycles, or groundwater diversion</p>
+                    <h3><i class="fa-solid fa-bolt-lightning"></i> System Water Operations</h3>
+                    <p>Apply storm inflow, simulate consumption cycle, or manage dual reservoirs</p>
                   </div>
                 </div>
 
@@ -1008,10 +1192,10 @@
                     <i class="fa-solid fa-shower"></i> Consume 1-Day Water (-540 L)
                   </button>
                   <button class="btn btn-outline" id="btnFillTankMax">
-                    <i class="fa-solid fa-arrows-up-to-line"></i> Top Up To 100%
+                    <i class="fa-solid fa-arrows-up-to-line"></i> Top Up Both (100%)
                   </button>
                   <button class="btn btn-outline btn-danger-soft" id="btnDrainTank">
-                    <i class="fa-solid fa-trash-can"></i> Drain / Empty Tank
+                    <i class="fa-solid fa-trash-can"></i> Drain Both Tanks
                   </button>
                 </div>
 
@@ -1022,7 +1206,7 @@
                   </div>
                   <div class="alert-info-wrap">
                     <strong id="tankOverflowTitle">No Overflow Risk Currently</strong>
-                    <p id="tankOverflowDesc">Tank has 3,200 L of available space before reaching spill level.</p>
+                    <p id="tankOverflowDesc">Dual storage system has 7,000 L of available space before reaching spill level.</p>
                   </div>
                 </div>
 

@@ -24,8 +24,12 @@
       roofArea: 200,
       roofCoeff: 0.90,
       roofName: "Corrugated Metal / GI Sheet",
-      tankCapacity: 10000,
-      storedWater: 6800,
+      primaryTankCapacity: 10000,
+      primaryTankWater: 6800,
+      secondaryTankCapacity: 5000,
+      secondaryTankWater: 1200,
+      tankCapacity: 15000,
+      storedWater: 8000,
       peopleCount: 4,
       dailyRate: 135,
       rainfall: 65,
@@ -40,8 +44,12 @@
       roofArea: 850,
       roofCoeff: 0.80,
       roofName: "Reinforced Concrete Slab / Terrace",
-      tankCapacity: 45000,
-      storedWater: 29500,
+      primaryTankCapacity: 35000,
+      primaryTankWater: 29500,
+      secondaryTankCapacity: 15000,
+      secondaryTankWater: 4500,
+      tankCapacity: 50000,
+      storedWater: 34000,
       peopleCount: 36,
       dailyRate: 135,
       rainfall: 75,
@@ -56,6 +64,10 @@
       roofArea: 1400,
       roofCoeff: 0.85,
       roofName: "Clay / Terracotta Tiled Roof",
+      primaryTankCapacity: 50000,
+      primaryTankWater: 42000,
+      secondaryTankCapacity: 25000,
+      secondaryTankWater: 10000,
       tankCapacity: 75000,
       storedWater: 52000,
       peopleCount: 150,
@@ -73,6 +85,10 @@
       roofArea: 2800,
       roofCoeff: 0.90,
       roofName: "Corrugated Metal / GI Sheet",
+      primaryTankCapacity: 70000,
+      primaryTankWater: 60000,
+      secondaryTankCapacity: 30000,
+      secondaryTankWater: 11000,
       tankCapacity: 100000,
       storedWater: 71000,
       peopleCount: 40,
@@ -105,8 +121,19 @@
     ],
     firstFlush: true,
     firstFlushDepth: 1.5,
-    tankCapacity: 10000,
-    storedWater: 6800,
+    // Smart Overflow Diversion Dual-Tank System
+    primaryTankCapacity: 10000,
+    primaryTankWater: 6800,
+    secondaryTankCapacity: 5000,
+    secondaryTankWater: 1200,
+    tankCapacity: 15000, // Combined total capacity
+    storedWater: 8000,   // Combined total stored water
+    diversionValve: {
+      status: 'STANDBY', // 'STANDBY' or 'DIVERTING'
+      flowRate: 0,
+      lastDivertedLiters: 0,
+      rechargeSpillLiters: 0
+    },
     peopleCount: 4,
     dailyRatePerPerson: 135,
     annualRainfall: 950,
@@ -175,9 +202,34 @@
             : state.rooftops
         };
 
-        // Safety clamps to prevent negative or corrupted quantities
-        state.tankCapacity = Math.max(500, Number(state.tankCapacity) || 10000);
-        state.storedWater = Math.max(0, Math.min(state.tankCapacity, Number(state.storedWater) || 0));
+        // Dual-tank backward compatibility & boundary clamps
+        if (parsed.primaryTankCapacity !== undefined) {
+          state.primaryTankCapacity = Math.max(500, Number(parsed.primaryTankCapacity) || 10000);
+        } else {
+          state.primaryTankCapacity = Math.max(500, Number(parsed.tankCapacity) || 10000);
+        }
+
+        if (parsed.secondaryTankCapacity !== undefined) {
+          state.secondaryTankCapacity = Math.max(500, Number(parsed.secondaryTankCapacity) || 5000);
+        } else {
+          state.secondaryTankCapacity = 5000;
+        }
+
+        if (parsed.primaryTankWater !== undefined) {
+          state.primaryTankWater = Math.max(0, Math.min(state.primaryTankCapacity, Number(parsed.primaryTankWater) || 0));
+        } else {
+          state.primaryTankWater = Math.max(0, Math.min(state.primaryTankCapacity, Number(parsed.storedWater) || 6800));
+        }
+
+        if (parsed.secondaryTankWater !== undefined) {
+          state.secondaryTankWater = Math.max(0, Math.min(state.secondaryTankCapacity, Number(parsed.secondaryTankWater) || 0));
+        } else {
+          const leftover = Math.max(0, (Number(parsed.storedWater) || 8000) - state.primaryTankWater);
+          state.secondaryTankWater = Math.min(state.secondaryTankCapacity, leftover);
+        }
+
+        state.tankCapacity = state.primaryTankCapacity + state.secondaryTankCapacity;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
         state.rainfall = Math.max(0, Number(state.rainfall) || 0);
         state.peopleCount = Math.max(1, Number(state.peopleCount) || 4);
         state.dailyRatePerPerson = Math.max(10, Number(state.dailyRatePerPerson) || 135);
@@ -214,8 +266,13 @@
     state.roofArea = defaultData.roofArea;
     state.roofCoeff = defaultData.roofCoeff;
     state.roofName = defaultData.roofName;
+    state.primaryTankCapacity = defaultData.primaryTankCapacity;
+    state.primaryTankWater = defaultData.primaryTankWater;
+    state.secondaryTankCapacity = defaultData.secondaryTankCapacity;
+    state.secondaryTankWater = defaultData.secondaryTankWater;
     state.tankCapacity = defaultData.tankCapacity;
     state.storedWater = defaultData.storedWater;
+    state.diversionValve = { status: 'STANDBY', flowRate: 0, lastDivertedLiters: 0, rechargeSpillLiters: 0 };
     state.peopleCount = defaultData.peopleCount;
     state.dailyRatePerPerson = defaultData.dailyRate;
     state.rainfall = defaultData.rainfall;
@@ -235,8 +292,60 @@
   }
 
   // =========================================================================
-  // 3. HYDROLOGY CALCULATION ENGINE (SINGLE & MULTI-ROOF)
   // =========================================================================
+  // 3. HYDROLOGY & SMART OVERFLOW DIVERSION CALCULATION ENGINE
+  // =========================================================================
+
+  /**
+   * Smart Overflow Diversion Hydraulic Model:
+   * When Primary Tank reaches primaryCapacity, incoming excess water is automatically
+   * calculated and diverted into the Secondary Tank.
+   * When Secondary Tank also reaches capacity, any remaining excess is calculated as
+   * tertiary overflow discharging safely to groundwater recharge / percolation pit.
+   */
+  function calculateWaterDiversion(inflowLiters, pStored, pCap, sStored, sCap) {
+    const inflow = Math.max(0, Number(inflowLiters) || 0);
+    const primaryCap = Math.max(100, Number(pCap) || 10000);
+    const secondaryCap = Math.max(100, Number(sCap) || 5000);
+    const curPStored = Math.max(0, Math.min(primaryCap, Number(pStored) || 0));
+    const curSStored = Math.max(0, Math.min(secondaryCap, Number(sStored) || 0));
+
+    const primaryHeadroom = Math.max(0, primaryCap - curPStored);
+    const secondaryHeadroom = Math.max(0, secondaryCap - curSStored);
+
+    // Step 1: Water directed into Primary Tank up to capacity
+    const toPrimary = Math.min(inflow, primaryHeadroom);
+    const primaryExcess = inflow - toPrimary;
+
+    // Step 2: Excess diverted automatically to Secondary Auxiliary Tank
+    const toSecondary = Math.min(primaryExcess, secondaryHeadroom);
+
+    // Step 3: Remaining overflow when BOTH tanks are completely full
+    const remainingOverflow = Math.max(0, primaryExcess - toSecondary);
+
+    const newPrimaryStored = curPStored + toPrimary;
+    const newSecondaryStored = curSStored + toSecondary;
+    const newTotalStored = newPrimaryStored + newSecondaryStored;
+    const totalCapacity = primaryCap + secondaryCap;
+    const newTotalHeadroom = Math.max(0, totalCapacity - newTotalStored);
+
+    return {
+      inflow,
+      toPrimary,
+      primaryExcess,
+      toSecondary,
+      remainingOverflow,
+      newPrimaryStored,
+      newSecondaryStored,
+      newTotalStored,
+      totalCapacity,
+      newTotalHeadroom,
+      primaryFull: newPrimaryStored >= primaryCap,
+      secondaryFull: newSecondaryStored >= secondaryCap,
+      bothFull: (newPrimaryStored >= primaryCap) && (newSecondaryStored >= secondaryCap),
+      valveActive: primaryExcess > 0
+    };
+  }
 
   /**
    * Scientific Formula:
@@ -307,22 +416,42 @@
     const monthlyDemandLiters = dailyDemandLiters * 30;
     const annualDemandLiters = dailyDemandLiters * 365;
 
-    // Stored water & Reservoir Capacity (clamped)
-    const stored = Math.max(0, Number(state.storedWater) || 0);
-    const cap = Math.max(1, Number(state.tankCapacity) || 10000);
+    // Dual Tank Metrics & Boundary Clamping
+    const primaryCap = Math.max(500, Number(state.primaryTankCapacity) || 10000);
+    const secondaryCap = Math.max(500, Number(state.secondaryTankCapacity) || 5000);
+    const primaryStored = Math.max(0, Math.min(primaryCap, Number(state.primaryTankWater) || 0));
+    const secondaryStored = Math.max(0, Math.min(secondaryCap, Number(state.secondaryTankWater) || 0));
 
-    // Autonomy Duration
+    const totalCap = primaryCap + secondaryCap;
+    const totalStored = primaryStored + secondaryStored;
+
+    const primaryFillPct = primaryCap > 0 ? ((primaryStored / primaryCap) * 100).toFixed(1) : 0;
+    const secondaryFillPct = secondaryCap > 0 ? ((secondaryStored / secondaryCap) * 100).toFixed(1) : 0;
+    const totalFillPct = totalCap > 0 ? ((totalStored / totalCap) * 100).toFixed(1) : 0;
+
+    const primaryHeadroom = Math.max(0, primaryCap - primaryStored);
+    const secondaryHeadroom = Math.max(0, secondaryCap - secondaryStored);
+    const totalHeadroom = Math.max(0, totalCap - totalStored);
+
+    // Autonomy Duration based on Total Stored Water
     const coverageDays = dailyDemandLiters > 0
-      ? (stored / dailyDemandLiters).toFixed(1)
+      ? (totalStored / dailyDemandLiters).toFixed(1)
       : 0;
 
-    // Tank Level Metrics
-    const tankFillPct = Math.min(100, Math.max(0, (stored / cap) * 100)).toFixed(1);
-    const remainingHeadroom = Math.max(0, cap - stored);
+    // Backward-compatible aliases for single-tank references
+    const tankFillPct = totalFillPct;
+    const remainingHeadroom = totalHeadroom;
 
-    // Projected Storm Impact
-    const projectedTotal = stored + netHarvestLiters;
-    const overflowLiters = Math.max(0, projectedTotal - cap);
+    // Projected Storm Impact with Automated Dual-Tank Overflow Diversion
+    const stormDiversion = calculateWaterDiversion(
+      netHarvestLiters,
+      primaryStored,
+      primaryCap,
+      secondaryStored,
+      secondaryCap
+    );
+    const projectedTotal = Math.min(totalCap, totalStored + netHarvestLiters);
+    const overflowLiters = stormDiversion.remainingOverflow;
 
     // Annual Projection
     const annualEffR = Math.max(0, state.annualRainfall - (state.firstFlush ? state.firstFlushDepth * 12 : 0));
@@ -356,6 +485,25 @@
       remainingHeadroom,
       projectedTotal,
       overflowLiters,
+      // Smart Dual-Tank Specific Metrics
+      primaryCap,
+      primaryStored,
+      primaryFillPct,
+      primaryHeadroom,
+      primaryIsFull: primaryStored >= primaryCap,
+      secondaryCap,
+      secondaryStored,
+      secondaryFillPct,
+      secondaryHeadroom,
+      secondaryIsFull: secondaryStored >= secondaryCap,
+      secondaryIsFilling: secondaryStored > 0 && secondaryStored < secondaryCap,
+      totalCap,
+      totalStored,
+      totalStoredWater: totalStored,
+      totalRemainingHeadroom: totalHeadroom,
+      totalFillPct,
+      bothFull: primaryStored >= primaryCap && secondaryStored >= secondaryCap,
+      stormDiversion,
       annualHarvestLiters,
       annualRainCoveragePct,
       annualFinancialSavings,
@@ -555,6 +703,48 @@
         time: 'Telemetry Analysis',
         actionTab: 'demand',
         actionLabel: 'Optimize Demand'
+      });
+    }
+
+    // Alert: Primary Tank Full & Smart Diversion Active
+    if (state.primaryTankWater >= state.primaryTankCapacity && state.secondaryTankWater < state.secondaryTankCapacity) {
+      alerts.push({
+        id: 'alert_primary_tank_full',
+        severity: 'warning',
+        icon: 'fa-shuffle',
+        title: 'Primary Tank Full (100%): Smart Diversion Active',
+        desc: `Primary reservoir (${formatNum(state.primaryTankCapacity)} L) is full. Automated valve is OPEN and surplus water is actively diverting into Secondary Tank (${formatNum(state.secondaryTankWater)} / ${formatNum(state.secondaryTankCapacity)} L).`,
+        time: 'Real-time telemetry',
+        actionTab: 'tank',
+        actionLabel: 'View Diversion'
+      });
+    }
+
+    // Alert: Secondary Tank Filling
+    if (state.secondaryTankWater > 0 && state.secondaryTankWater < state.secondaryTankCapacity) {
+      alerts.push({
+        id: 'alert_secondary_tank_filling',
+        severity: 'info',
+        icon: 'fa-boxes-stacked',
+        title: 'Secondary Auxiliary Tank Filling',
+        desc: `Auxiliary reservoir is actively capturing diverted overflow (${formatNum(state.secondaryTankWater)} L stored, ${formatNum(hydro.secondaryHeadroom)} L available buffer remaining).`,
+        time: 'Active flow',
+        actionTab: 'tank',
+        actionLabel: 'Check Secondary'
+      });
+    }
+
+    // Alert: Both Tanks Full
+    if (state.primaryTankWater >= state.primaryTankCapacity && state.secondaryTankWater >= state.secondaryTankCapacity) {
+      alerts.push({
+        id: 'alert_both_tanks_full',
+        severity: 'warning',
+        icon: 'fa-water',
+        title: 'Dual Reservoir Storage 100% Full',
+        desc: `Both Primary (${formatNum(state.primaryTankCapacity)} L) and Secondary (${formatNum(state.secondaryTankCapacity)} L) tanks have reached maximum capacity. Surplus storm harvest is discharging into groundwater recharge pits.`,
+        time: 'Surplus overflow',
+        actionTab: 'tank',
+        actionLabel: 'Inspect Recharge'
       });
     }
 
@@ -767,9 +957,9 @@
     }
 
     const kpiStored = document.getElementById('kpiStoredWater');
-    if (kpiStored) kpiStored.innerHTML = `${formatNum(state.storedWater)} <span class="metric-unit">L</span>`;
+    if (kpiStored) kpiStored.innerHTML = `${formatNum(hydro.totalStoredWater)} <span class="metric-unit">L</span>`;
     const kpiTankCapSub = document.getElementById('kpiTankCapacitySub');
-    if (kpiTankCapSub) kpiTankCapSub.textContent = `Capacity: ${formatNum(state.tankCapacity)} L (${hydro.tankFillPct}% full)`;
+    if (kpiTankCapSub) kpiTankCapSub.textContent = `Total: ${formatNum(hydro.totalCap)} L (P: ${formatNum(state.primaryTankWater)} L | S: ${formatNum(state.secondaryTankWater)} L)`;
 
     const kpiProgress = document.getElementById('kpiStorageProgress');
     if (kpiProgress) kpiProgress.style.width = `${hydro.tankFillPct}%`;
@@ -882,48 +1072,140 @@
     const calcEffFill = document.getElementById('calcEfficiencyFill');
     if (calcEffFill) calcEffFill.style.width = `${hydro.efficiencyPct}%`;
 
-    // Impact preview in calculator
+    // Impact preview in calculator (Dual-Tank Aware)
     const impactCurrent = document.getElementById('impactCurrentVal');
-    if (impactCurrent) impactCurrent.textContent = `${formatNum(state.storedWater)} L`;
+    if (impactCurrent) impactCurrent.textContent = `${formatNum(hydro.totalStoredWater)} L`;
     const impactHarvest = document.getElementById('impactHarvestVal');
     if (impactHarvest) impactHarvest.textContent = `+${formatNum(hydro.netHarvestLiters)} L`;
     const impactCap = document.getElementById('impactTankCap');
-    if (impactCap) impactCap.textContent = `${formatNum(state.tankCapacity)} L`;
+    if (impactCap) impactCap.textContent = `${formatNum(hydro.totalCap)} L`;
 
     const impactBadge = document.getElementById('impactStatusBadge');
     const impactCallout = document.getElementById('impactCalloutText');
     if (impactBadge && impactCallout) {
-      if (hydro.overflowLiters > 0) {
+      if (hydro.stormDiversion && hydro.stormDiversion.remainingOverflow > 0) {
         impactBadge.className = 'impact-overflow';
-        impactBadge.textContent = `Overflow (+${formatNum(hydro.overflowLiters)} L)`;
+        impactBadge.textContent = `Recharge Spill (+${formatNum(hydro.stormDiversion.remainingOverflow)} L)`;
         impactCallout.className = 'impact-callout';
-        impactCallout.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>Warning: This storm will exceed your tank by <strong>${formatNum(hydro.overflowLiters)} L</strong>. Excess is safely routed to recharge groundwater aquifers.</span>`;
+        impactCallout.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>Dual Tank Overflow: Storm fills Primary (${formatNum(state.primaryTankCapacity)} L) & Secondary (${formatNum(state.secondaryTankCapacity)} L). Excess <strong>${formatNum(hydro.stormDiversion.remainingOverflow)} L</strong> safely spills to groundwater recharge pit.</span>`;
+      } else if (hydro.stormDiversion && hydro.stormDiversion.toSecondary > 0) {
+        impactBadge.className = 'impact-add';
+        impactBadge.textContent = `Smart Diversion Active (+${formatNum(hydro.stormDiversion.toSecondary)} L to Sec)`;
+        impactCallout.className = 'impact-callout safe';
+        impactCallout.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Automated Diversion: Primary tank fills to 100%; <strong>${formatNum(hydro.stormDiversion.toSecondary)} L</strong> is automatically routed to Secondary Auxiliary Tank with zero wasted runoff.</span>`;
       } else {
         impactBadge.className = 'impact-add';
-        impactBadge.textContent = `Within Capacity (${formatNum(state.tankCapacity - hydro.projectedTotal)} L space)`;
+        impactBadge.textContent = `Within Capacity (${formatNum(hydro.totalRemainingHeadroom - hydro.netHarvestLiters)} L space)`;
         impactCallout.className = 'impact-callout safe';
-        impactCallout.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Optimal Catchment: Tank has ample space to store all <strong>${formatNum(hydro.netHarvestLiters)} Liters</strong> without spillover.</span>`;
+        impactCallout.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Optimal Catchment: Primary tank has ample space to store all <strong>${formatNum(hydro.netHarvestLiters)} Liters</strong> without overflow.</span>`;
       }
     }
 
-    // 6. Tank Management View Updates
+    // 6. Tank Management View Updates (Smart Dual-Tank & Automated Diversion)
+    // Primary Tank Visuals
     const tankGraphicLiters = document.getElementById('tankGraphicLiters');
-    if (tankGraphicLiters) tankGraphicLiters.textContent = `${formatNum(state.storedWater)} L`;
+    if (tankGraphicLiters) tankGraphicLiters.textContent = `${formatNum(state.primaryTankWater)} L`;
     const tankGraphicPct = document.getElementById('tankGraphicPct');
-    if (tankGraphicPct) tankGraphicPct.textContent = `${hydro.tankFillPct}% Capacity`;
+    if (tankGraphicPct) tankGraphicPct.textContent = `${hydro.primaryFillPct}% Capacity`;
+    const primaryTankBadge = document.getElementById('primaryTankBadge');
+    if (primaryTankBadge) primaryTankBadge.textContent = `${formatNum(state.primaryTankCapacity)} L (${hydro.primaryFillPct}%)`;
 
     const tankWaterMass = document.getElementById('tankWaterMass');
     if (tankWaterMass) {
-      const visualPct = state.storedWater === 0 ? 0 : Math.max(5, Math.min(100, hydro.tankFillPct));
+      const visualPct = state.primaryTankWater === 0 ? 0 : Math.max(5, Math.min(100, Number(hydro.primaryFillPct) || 0));
       tankWaterMass.style.height = `${visualPct}%`;
     }
 
+    // Secondary Tank Visuals
+    const tank2GraphicLiters = document.getElementById('tank2GraphicLiters');
+    if (tank2GraphicLiters) tank2GraphicLiters.textContent = `${formatNum(state.secondaryTankWater)} L`;
+    const tank2GraphicPct = document.getElementById('tank2GraphicPct');
+    if (tank2GraphicPct) tank2GraphicPct.textContent = `${hydro.secondaryFillPct}% Capacity`;
+    const secondaryTankBadge = document.getElementById('secondaryTankBadge');
+    if (secondaryTankBadge) secondaryTankBadge.textContent = `${formatNum(state.secondaryTankCapacity)} L (${hydro.secondaryFillPct}%)`;
+
+    const tank2WaterMass = document.getElementById('tank2WaterMass');
+    if (tank2WaterMass) {
+      const visual2Pct = state.secondaryTankWater === 0 ? 0 : Math.max(5, Math.min(100, Number(hydro.secondaryFillPct) || 0));
+      tank2WaterMass.style.height = `${visual2Pct}%`;
+    }
+
+    // Smart Automated Diversion Valve & Pipe State
+    const valveBox = document.getElementById('diversionValveBox');
+    const valveBadge = document.getElementById('diversionValveBadge');
+    const flowStream = document.getElementById('diversionFlowStream');
+    const diversionArrow = document.getElementById('diversionArrow');
+    const flowRate = document.getElementById('diversionFlowRate');
+
+    const isDiverting = hydro.primaryIsFull || (state.diversionValve && state.diversionValve.status === 'DIVERTING');
+
+    if (valveBox && valveBadge) {
+      if (isDiverting) {
+        valveBox.classList.add('active');
+        valveBadge.textContent = 'VALVE: DIVERTING';
+        if (flowStream) flowStream.classList.add('flowing');
+        if (diversionArrow) diversionArrow.classList.add('flowing');
+        if (flowRate) flowRate.textContent = '42.5 L/min Transfer';
+      } else {
+        valveBox.classList.remove('active');
+        valveBadge.textContent = 'VALVE: STANDBY';
+        if (flowStream) flowStream.classList.remove('flowing');
+        if (diversionArrow) diversionArrow.classList.remove('flowing');
+        if (flowRate) flowRate.textContent = '0 L/min Transfer';
+      }
+    }
+
+    // Tertiary Recharge Pit Node
+    const rechargeNode = document.getElementById('tertiaryRechargeNode');
+    const rechargeStatus = document.getElementById('rechargeStatusText');
+    const rechargeSpill = document.getElementById('rechargeSpillVol');
+    if (rechargeNode && rechargeStatus) {
+      if (hydro.bothFull) {
+        rechargeNode.classList.add('active');
+        rechargeStatus.textContent = 'Aquifer Recharging';
+        if (rechargeSpill) rechargeSpill.textContent = 'Surplus Spill Active';
+      } else {
+        rechargeNode.classList.remove('active');
+        rechargeStatus.textContent = 'Recharge Standby';
+        if (rechargeSpill) rechargeSpill.textContent = '0 L spilled';
+      }
+    }
+
+    // Real-Time Diversion Banner Updates
+    const diversionBanner = document.getElementById('diversionLiveBanner');
+    const bannerIcon = document.getElementById('diversionBannerIcon');
+    const bannerText = document.getElementById('diversionBannerText');
+
+    if (diversionBanner && bannerText) {
+      if (hydro.bothFull) {
+        diversionBanner.className = 'diversion-live-banner overflowing';
+        if (bannerIcon) bannerIcon.className = 'fa-solid fa-triangle-exclamation';
+        bannerText.innerHTML = `<strong>Dual Reservoirs 100% Full:</strong> Both Primary (${formatNum(state.primaryTankCapacity)} L) and Secondary (${formatNum(state.secondaryTankCapacity)} L) are at max capacity. Excess storm harvest is safely discharging into groundwater recharge pits.`;
+      } else if (hydro.primaryIsFull) {
+        diversionBanner.className = 'diversion-live-banner diverting';
+        if (bannerIcon) bannerIcon.className = 'fa-solid fa-shuffle';
+        bannerText.innerHTML = `<strong>Smart Valve: ACTIVE DIVERSION:</strong> Primary tank reached capacity. Automated valve opened — excess storm inflow is actively routing into Secondary Tank (${formatNum(state.secondaryTankWater)} / ${formatNum(state.secondaryTankCapacity)} L).`;
+      } else {
+        diversionBanner.className = 'diversion-live-banner';
+        if (bannerIcon) bannerIcon.className = 'fa-solid fa-circle-check';
+        bannerText.innerHTML = `<strong>Smart Valve: STANDBY:</strong> Primary tank has ${formatNum(hydro.primaryHeadroom)} L available storage. Secondary auxiliary tank (${formatNum(state.secondaryTankCapacity)} L) is ready to capture overflow.`;
+      }
+    }
+
+    // Total Storage Metrics Grid
     const tankValStored = document.getElementById('tankValStored');
-    if (tankValStored) tankValStored.textContent = `${formatNum(state.storedWater)} L`;
+    if (tankValStored) tankValStored.textContent = `${formatNum(hydro.totalStoredWater)} L`;
+    const tsDetailStored = document.getElementById('tsDetailStored');
+    if (tsDetailStored) tsDetailStored.textContent = `P: ${formatNum(state.primaryTankWater)} L | S: ${formatNum(state.secondaryTankWater)} L`;
+
     const tankValHeadroom = document.getElementById('tankValHeadroom');
-    if (tankValHeadroom) tankValHeadroom.textContent = `${formatNum(hydro.remainingHeadroom)} L`;
+    if (tankValHeadroom) tankValHeadroom.textContent = `${formatNum(hydro.totalRemainingHeadroom)} L`;
+    const tsDetailHeadroom = document.getElementById('tsDetailHeadroom');
+    if (tsDetailHeadroom) tsDetailHeadroom.textContent = `P: ${formatNum(hydro.primaryHeadroom)} L | S: ${formatNum(hydro.secondaryHeadroom)} L`;
+
     const tankValPct = document.getElementById('tankValPct');
-    if (tankValPct) tankValPct.textContent = `${hydro.tankFillPct}%`;
+    if (tankValPct) tankValPct.textContent = `${hydro.totalFillPct}%`;
+
     const tankValDays = document.getElementById('tankValDays');
     if (tankValDays) tankValDays.textContent = `${hydro.coverageDays} Days`;
 
@@ -931,12 +1213,15 @@
     const tankBadge = document.getElementById('tankStateBadge');
     const tankStateText = document.getElementById('tankStateText');
     if (tankBadge && tankStateText) {
-      if (hydro.tankFillPct > 95) {
+      if (hydro.bothFull) {
         tankBadge.className = 'tank-badge-live bg-amber';
-        tankStateText.textContent = 'Maximum Capacity / Full';
-      } else if (hydro.tankFillPct < 20) {
+        tankStateText.textContent = 'Dual Reservoirs Full (100%)';
+      } else if (hydro.primaryIsFull) {
+        tankBadge.className = 'tank-badge-live bg-amber';
+        tankStateText.textContent = 'Primary Full & Diverting';
+      } else if (Number(hydro.totalFillPct) < 20) {
         tankBadge.className = 'tank-badge-live bg-red';
-        tankStateText.textContent = 'Critical Reserve';
+        tankStateText.textContent = 'Critical Low Storage';
       } else {
         tankBadge.className = 'tank-badge-live';
         tankStateText.textContent = 'Normal Storage Buffer';
@@ -948,22 +1233,22 @@
     const overflowTitle = document.getElementById('tankOverflowTitle');
     const overflowDesc = document.getElementById('tankOverflowDesc');
     if (overflowAlert && overflowTitle && overflowDesc) {
-      if (hydro.tankFillPct >= 100) {
+      if (hydro.bothFull) {
         overflowAlert.className = 'tank-overflow-card hazard';
-        overflowTitle.textContent = 'Overflow Active!';
-        overflowDesc.textContent = 'Tank has reached full capacity. Inflow diverter is directing surplus to recharge pits.';
-      } else if (hydro.tankFillPct > 85) {
+        overflowTitle.textContent = 'Dual Tank Overflow Active!';
+        overflowDesc.textContent = `Both Primary and Secondary tanks are 100% full (${formatNum(hydro.totalCap)} L). Inflow diverter is safely routing surplus water to aquifer recharge percolation pits.`;
+      } else if (hydro.primaryIsFull) {
         overflowAlert.className = 'tank-overflow-card hazard';
-        overflowTitle.textContent = 'High Level Warning (85%+)';
-        overflowDesc.textContent = `Only ${formatNum(hydro.remainingHeadroom)} L space left before overflow.`;
-      } else if (hydro.tankFillPct < 20) {
+        overflowTitle.textContent = 'Primary Overflow Diverting to Secondary Tank';
+        overflowDesc.textContent = `Primary tank is full. ${formatNum(state.secondaryTankWater)} L captured in Secondary Tank (${formatNum(hydro.secondaryHeadroom)} L auxiliary space remaining).`;
+      } else if (Number(hydro.totalFillPct) < 20) {
         overflowAlert.className = 'tank-overflow-card hazard';
         overflowTitle.textContent = 'Low Storage Level Warning (<20%)';
-        overflowDesc.textContent = `Current stored volume is down to ${formatNum(state.storedWater)} L. Consider switching to backup supply.`;
+        overflowDesc.textContent = `Total stored volume is down to ${formatNum(hydro.totalStoredWater)} L. Consider switching to municipal backup supply.`;
       } else {
         overflowAlert.className = 'tank-overflow-card';
         overflowTitle.textContent = 'No Overflow Risk Currently';
-        overflowDesc.textContent = `Tank has ${formatNum(hydro.remainingHeadroom)} L available space before spill level.`;
+        overflowDesc.textContent = `Dual storage system has ${formatNum(hydro.totalRemainingHeadroom)} L available capacity before spill level.`;
       }
     }
 
@@ -1717,21 +2002,25 @@
     const hydro = calculateHydrology();
     const lq = q.toLowerCase();
 
-    if (lq.includes('overflow') || lq.includes('monsoon') || lq.includes('spill')) {
+    if (lq.includes('overflow') || lq.includes('diversion') || lq.includes('secondary tank') || lq.includes('monsoon') || lq.includes('spill') || lq.includes('valve')) {
       return `
-### 🌧️ Monsoon Overflow Mitigation Plan
-Based on your live system telemetry:
-- **Current Available Headroom:** **${formatNum(hydro.remainingHeadroom)} Liters**
-- **Incoming Storm Yield (${state.rainfall} mm):** **${formatNum(hydro.netHarvestLiters)} Liters**
-- **Forecast Rainfall in ${state.weather.city} (${state.weather.rain24h} mm):** **${formatNum(hydro.forecastHarvestLiters)} Liters**
-${hydro.overflowLiters > 0
-          ? `- **Projected Overflow Risk:** **${formatNum(hydro.overflowLiters)} Liters** will overflow if not managed.`
-          : `- **Status:** Safe buffer. Current tank can store the entire anticipated storm volume.`}
+### 🔄 Smart Overflow Diversion System Status
+Your automated dual-tank hydraulic diversion system is continuously monitoring capacity:
+- **Primary Tank:** **${formatNum(state.primaryTankWater)} / ${formatNum(state.primaryTankCapacity)} Liters** (${hydro.primaryFillPct}% full).
+- **Secondary Auxiliary Tank:** **${formatNum(state.secondaryTankWater)} / ${formatNum(state.secondaryTankCapacity)} Liters** (${hydro.secondaryFillPct}% full).
+- **Combined Storage Capacity:** **${formatNum(hydro.totalCap)} Liters** (${formatNum(hydro.totalRemainingHeadroom)} L headroom available).
+- **Automated Diverter Valve Status:** **${hydro.primaryIsFull ? 'ACTIVE (Diverting surplus to Secondary Tank)' : 'STANDBY (Primary tank has storage space)'}**.
+- **Storm Yield (${state.rainfall} mm):** **${formatNum(hydro.netHarvestLiters)} Liters**
+${hydro.stormDiversion && hydro.stormDiversion.remainingOverflow > 0
+  ? `- **Aquifer Recharge Outflow:** Both reservoirs will reach 100% capacity! **${formatNum(hydro.stormDiversion.remainingOverflow)} Liters** will safely infiltrate into groundwater percolation pits.`
+  : hydro.stormDiversion && hydro.stormDiversion.toSecondary > 0
+    ? `- **Automated Transfer:** Primary tank fills completely; **${formatNum(hydro.stormDiversion.toSecondary)} Liters** is automatically captured in Secondary Tank.`
+    : `- **Status:** Safe buffer. Entire storm volume will be retained in Primary Storage.`}
 
-**Actionable Engineering Steps:**
-1. **Percolation Recharge Pit:** Route the secondary 3-inch overflow PVC pipe into a graded gravel soakaway pit to recharge groundwater tables.
-2. **Pre-Storm Domestic Consumption:** Use 1,500 L for laundry, car washing, and toilet cisterns before the rain to create headroom.
-3. **Multi-Tank Siphon:** Link an auxiliary 5,000L polyethylene tank via an equalizer pipe.
+**How Automated Diversion Operates:**
+1. **Primary Catchment:** All incoming rainwater from rooftop filters directly enters the Primary Tank.
+2. **Dynamic Diversion:** The moment the Primary Tank reaches 100% capacity, the automated smart diverter valve opens, routing excess inflow directly into the Secondary Tank.
+3. **Tertiary Aquifer Recharge:** If both Primary and Secondary tanks reach 100%, remaining overflow discharges into a gravel percolation pit to recharge local groundwater aquifers.
       `;
     }
 
@@ -1881,10 +2170,15 @@ To ensure high catchment efficiency and water clarity:
     csv += `Weather Condition,${state.weather.conditionText} (${state.weather.temp} C)\n\n`;
 
     csv += `--- STORAGE RESERVOIR & TELEMETRY ---\n`;
-    csv += `Tank Total Capacity (L),${state.tankCapacity}\n`;
-    csv += `Current Stored Volume (L),${state.storedWater}\n`;
-    csv += `Available Headroom Space (L),${hydro.remainingHeadroom}\n`;
-    csv += `Reservoir Fill Percentage,${hydro.tankFillPct}%\n`;
+    csv += `Primary Tank Capacity (L),${state.primaryTankCapacity}\n`;
+    csv += `Primary Stored Volume (L),${state.primaryTankWater}\n`;
+    csv += `Secondary Tank Capacity (L),${state.secondaryTankCapacity}\n`;
+    csv += `Secondary Stored Volume (L),${state.secondaryTankWater}\n`;
+    csv += `Combined Storage Capacity (L),${hydro.totalCap}\n`;
+    csv += `Total Stored Volume (L),${hydro.totalStoredWater}\n`;
+    csv += `Available Headroom Space (L),${hydro.totalRemainingHeadroom}\n`;
+    csv += `Combined Reservoir Fill Percentage,${hydro.totalFillPct}%\n`;
+    csv += `Automated Overflow Valve Status,${hydro.primaryIsFull ? 'ACTIVE (Diverting to Secondary)' : 'STANDBY'}\n`;
     csv += `Days of Water Autonomy,${hydro.coverageDays} Days\n\n`;
 
     csv += `--- DEMOGRAPHIC WATER DEMAND ---\n`;
@@ -1994,7 +2288,19 @@ To ensure high catchment efficiency and water clarity:
       secMulti.style.display = isMulti ? 'block' : 'none';
     }
 
-    // Tank inputs
+    // Tank inputs (Primary, Secondary & Backward Compatibility)
+    const pCapInput = document.getElementById('primaryTankCapacityInput');
+    if (pCapInput) pCapInput.value = state.primaryTankCapacity;
+
+    const pCurInput = document.getElementById('primaryTankCurrentInput');
+    if (pCurInput) pCurInput.value = state.primaryTankWater;
+
+    const sCapInput = document.getElementById('secondaryTankCapacityInput');
+    if (sCapInput) sCapInput.value = state.secondaryTankCapacity;
+
+    const sCurInput = document.getElementById('secondaryTankCurrentInput');
+    if (sCurInput) sCurInput.value = state.secondaryTankWater;
+
     const tankCapInput = document.getElementById('tankCapacityInput');
     if (tankCapInput) tankCapInput.value = state.tankCapacity;
 
@@ -2003,8 +2309,15 @@ To ensure high catchment efficiency and water clarity:
 
     const capChips = document.querySelectorAll('.btn-chip');
     capChips.forEach(chip => {
+      const target = chip.dataset.target;
       const cap = parseInt(chip.dataset.cap, 10);
-      chip.classList.toggle('active', cap === state.tankCapacity);
+      if (target === 'primary') {
+        chip.classList.toggle('active', cap === state.primaryTankCapacity);
+      } else if (target === 'secondary') {
+        chip.classList.toggle('active', cap === state.secondaryTankCapacity);
+      } else {
+        chip.classList.toggle('active', cap === state.tankCapacity);
+      }
     });
 
     // Demand inputs
@@ -2289,22 +2602,7 @@ To ensure high catchment efficiency and water clarity:
     if (btnApplyMultiToTank) {
       btnApplyMultiToTank.addEventListener('click', () => {
         const hydro = calculateHydrology();
-        const prevLevel = state.storedWater;
-        const newTotal = prevLevel + hydro.netHarvestLiters;
-
-        if (newTotal > state.tankCapacity) {
-          state.storedWater = state.tankCapacity;
-          const overflow = newTotal - state.tankCapacity;
-          showToast(`Combined Multi-Roof harvest added! Reservoir full (${formatNum(state.tankCapacity)} L). ${formatNum(overflow)} L directed to recharge percolation pit.`, 'warning');
-        } else {
-          state.storedWater = newTotal;
-          showToast(`Added combined multi-roof harvest (+${formatNum(hydro.netHarvestLiters)} L)`, 'success');
-        }
-
-        saveState();
-        syncUIWithState();
-        recalculateAll();
-        triggerInflowAnimation();
+        applyWaterInflow(hydro.netHarvestLiters, 'Combined Multi-Roof Harvest');
       });
     }
 
@@ -2415,76 +2713,185 @@ To ensure high catchment efficiency and water clarity:
     if (btnCalculateSave) {
       btnCalculateSave.addEventListener('click', () => {
         const hydro = calculateHydrology();
-        const prevLevel = state.storedWater;
-        const newTotal = prevLevel + hydro.netHarvestLiters;
-
-        if (newTotal > state.tankCapacity) {
-          state.storedWater = state.tankCapacity;
-          const overflow = newTotal - state.tankCapacity;
-          showToast(`Reservoir topped up to capacity (${formatNum(state.tankCapacity)} L). ${formatNum(overflow)} L directed to recharge pit.`, 'warning');
-        } else {
-          state.storedWater = newTotal;
-          showToast(`Harvested +${formatNum(hydro.netHarvestLiters)} L pumped into storage reservoir!`, 'success');
-        }
-
-        saveState();
-        syncUIWithState();
-        recalculateAll();
-        triggerInflowAnimation();
+        applyWaterInflow(hydro.netHarvestLiters, 'Catchment Rainwater Harvest');
       });
     }
 
     // -----------------------------------------------------------------------
-    // Smart Tank Monitoring Controls
+    // Smart Dual-Tank Monitoring & Sizing Controls
     // -----------------------------------------------------------------------
+    // Primary Tank Settings
+    const pCapInput = document.getElementById('primaryTankCapacityInput');
+    const btnUpdatePCap = document.getElementById('btnUpdatePrimaryCap');
+    if (btnUpdatePCap && pCapInput) {
+      btnUpdatePCap.addEventListener('click', () => {
+        const newCap = Math.max(500, parseInt(pCapInput.value, 10) || 10000);
+        state.primaryTankCapacity = newCap;
+        if (state.primaryTankWater > newCap) state.primaryTankWater = newCap;
+        state.tankCapacity = state.primaryTankCapacity + state.secondaryTankCapacity;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+        showToast(`Primary tank capacity updated to ${formatNum(newCap)} Liters`, 'success');
+      });
+    }
+
+    const pCurInput = document.getElementById('primaryTankCurrentInput');
+    const btnSetPLevel = document.getElementById('btnSetPrimaryLevel');
+    if (btnSetPLevel && pCurInput) {
+      btnSetPLevel.addEventListener('click', () => {
+        let newLevel = Math.max(0, parseInt(pCurInput.value, 10) || 0);
+        if (newLevel > state.primaryTankCapacity) {
+          newLevel = state.primaryTankCapacity;
+          showToast(`Clamped level to Primary Tank capacity (${formatNum(state.primaryTankCapacity)} L)`, 'warning');
+        } else {
+          showToast(`Primary tank water level set to ${formatNum(newLevel)} L`, 'success');
+        }
+        state.primaryTankWater = newLevel;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+      });
+    }
+
+    // Secondary Tank Settings
+    const sCapInput = document.getElementById('secondaryTankCapacityInput');
+    const btnUpdateSCap = document.getElementById('btnUpdateSecondaryCap');
+    if (btnUpdateSCap && sCapInput) {
+      btnUpdateSCap.addEventListener('click', () => {
+        const newCap = Math.max(500, parseInt(sCapInput.value, 10) || 5000);
+        state.secondaryTankCapacity = newCap;
+        if (state.secondaryTankWater > newCap) state.secondaryTankWater = newCap;
+        state.tankCapacity = state.primaryTankCapacity + state.secondaryTankCapacity;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+        showToast(`Secondary auxiliary tank capacity updated to ${formatNum(newCap)} Liters`, 'success');
+      });
+    }
+
+    const sCurInput = document.getElementById('secondaryTankCurrentInput');
+    const btnSetSLevel = document.getElementById('btnSetSecondaryLevel');
+    if (btnSetSLevel && sCurInput) {
+      btnSetSLevel.addEventListener('click', () => {
+        let newLevel = Math.max(0, parseInt(sCurInput.value, 10) || 0);
+        if (newLevel > state.secondaryTankCapacity) {
+          newLevel = state.secondaryTankCapacity;
+          showToast(`Clamped level to Secondary Tank capacity (${formatNum(state.secondaryTankCapacity)} L)`, 'warning');
+        } else {
+          showToast(`Secondary tank water level set to ${formatNum(newLevel)} L`, 'success');
+        }
+        state.secondaryTankWater = newLevel;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+      });
+    }
+
+    // Quick Capacity Preset Chips
+    const capChips = document.querySelectorAll('.btn-chip');
+    capChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const target = chip.dataset.target;
+        const cap = parseInt(chip.dataset.cap, 10);
+        if (target === 'primary') {
+          state.primaryTankCapacity = cap;
+          if (state.primaryTankWater > cap) state.primaryTankWater = cap;
+          if (pCapInput) pCapInput.value = cap;
+          document.querySelectorAll('.btn-chip[data-target="primary"]').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          showToast(`Primary tank capacity set to ${formatNum(cap)} Liters`, 'info');
+        } else if (target === 'secondary') {
+          state.secondaryTankCapacity = cap;
+          if (state.secondaryTankWater > cap) state.secondaryTankWater = cap;
+          if (sCapInput) sCapInput.value = cap;
+          document.querySelectorAll('.btn-chip[data-target="secondary"]').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          showToast(`Secondary tank capacity set to ${formatNum(cap)} Liters`, 'info');
+        } else {
+          state.primaryTankCapacity = cap;
+          if (state.primaryTankWater > cap) state.primaryTankWater = cap;
+          capChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        }
+        state.tankCapacity = state.primaryTankCapacity + state.secondaryTankCapacity;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+      });
+    });
+
+    // Backward-compatible hidden tank controls
     const tankCapInput = document.getElementById('tankCapacityInput');
     const btnUpdateCap = document.getElementById('btnUpdateCapacity');
     if (btnUpdateCap && tankCapInput) {
       btnUpdateCap.addEventListener('click', () => {
         const newCap = Math.max(500, parseInt(tankCapInput.value, 10) || 10000);
-        state.tankCapacity = newCap;
-        if (state.storedWater > newCap) state.storedWater = newCap;
+        state.primaryTankCapacity = newCap;
+        state.tankCapacity = state.primaryTankCapacity + state.secondaryTankCapacity;
         saveState();
         syncUIWithState();
         recalculateAll();
-        showToast(`Tank capacity updated to ${formatNum(newCap)} Liters`, 'success');
       });
     }
-
-    const capChips = document.querySelectorAll('.btn-chip');
-    capChips.forEach(chip => {
-      chip.addEventListener('click', () => {
-        const cap = parseInt(chip.dataset.cap, 10);
-        state.tankCapacity = cap;
-        if (state.storedWater > cap) state.storedWater = cap;
-        if (tankCapInput) tankCapInput.value = cap;
-        capChips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        saveState();
-        syncUIWithState();
-        recalculateAll();
-        showToast(`Tank capacity set to ${formatNum(cap)} Liters`, 'info');
-      });
-    });
 
     const tankCurInput = document.getElementById('tankCurrentInput');
     const btnSetLevel = document.getElementById('btnSetCurrentLevel');
     if (btnSetLevel && tankCurInput) {
       btnSetLevel.addEventListener('click', () => {
-        let newLevel = Math.max(0, parseInt(tankCurInput.value, 10) || 0);
-        if (newLevel > state.tankCapacity) {
-          newLevel = state.tankCapacity;
-          showToast(`Clamped level to max tank capacity (${formatNum(state.tankCapacity)} L)`, 'warning');
-        } else {
-          showToast(`Storage water level set to ${formatNum(newLevel)} L`, 'success');
-        }
-        state.storedWater = newLevel;
+        const newLevel = Math.max(0, parseInt(tankCurInput.value, 10) || 0);
+        state.primaryTankWater = Math.min(state.primaryTankCapacity, newLevel);
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
         saveState();
         syncUIWithState();
         recalculateAll();
       });
     }
 
+    // -----------------------------------------------------------------------
+    // Smart Overflow Diversion Simulation Studio Controls
+    // -----------------------------------------------------------------------
+    const btnRunDemo = document.getElementById('btnRunDiversionDemo');
+    if (btnRunDemo) {
+      btnRunDemo.addEventListener('click', runDiversionSimulationDemo);
+    }
+
+    const btnSurge = document.getElementById('btnSurgeInflow');
+    if (btnSurge) {
+      btnSurge.addEventListener('click', () => {
+        applyWaterInflow(5000, 'Storm Pulse Surge (+5,000 L)');
+      });
+    }
+
+    const btnResetDemo = document.getElementById('btnResetDiversionDemo');
+    if (btnResetDemo) {
+      btnResetDemo.addEventListener('click', () => {
+        state.primaryTankWater = 6800;
+        state.secondaryTankWater = 1200;
+        state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+        state.diversionValve = { status: 'STANDBY', flowRate: 0, lastDivertedLiters: 0, rechargeSpillLiters: 0 };
+        saveState();
+        syncUIWithState();
+        recalculateAll();
+        showToast("Reset dual reservoirs to standard demonstration levels (P: 6,800 L | S: 1,200 L)", "info");
+      });
+    }
+
+    const btnTestInflow = document.getElementById('btnApplyTestInflow');
+    const testInflowInput = document.getElementById('diversionTestInflowInput');
+    if (btnTestInflow && testInflowInput) {
+      btnTestInflow.addEventListener('click', () => {
+        const vol = Math.max(10, parseInt(testInflowInput.value, 10) || 5000);
+        applyWaterInflow(vol, `Custom Inflow Injection (+${formatNum(vol)} L)`);
+      });
+    }
+
+    // Toggle simulated sensor stream
     const btnToggleSensor = document.getElementById('btnToggleSensorStream');
     if (btnToggleSensor) {
       btnToggleSensor.addEventListener('click', () => {
@@ -2499,27 +2906,12 @@ To ensure high catchment efficiency and water clarity:
       });
     }
 
-    // Operations buttons
+    // System Operations Buttons
     const btnSimRain = document.getElementById('btnSimulateRainInflow');
     if (btnSimRain) {
       btnSimRain.addEventListener('click', () => {
         const hydro = calculateHydrology();
-        const prevLevel = state.storedWater;
-        const newTotal = prevLevel + hydro.netHarvestLiters;
-
-        if (newTotal > state.tankCapacity) {
-          state.storedWater = state.tankCapacity;
-          const overflow = newTotal - state.tankCapacity;
-          showToast(`Storm added! Tank full (${formatNum(state.tankCapacity)} L). ${formatNum(overflow)} L directed to recharge percolation pit.`, 'warning');
-        } else {
-          state.storedWater = newTotal;
-          showToast(`Added calculated storm volume (+${formatNum(hydro.netHarvestLiters)} L)`, 'success');
-        }
-
-        saveState();
-        syncUIWithState();
-        recalculateAll();
-        triggerInflowAnimation();
+        applyWaterInflow(hydro.netHarvestLiters, 'Calculated Storm Event');
       });
     }
 
@@ -2529,23 +2921,29 @@ To ensure high catchment efficiency and water clarity:
     const btnTopUp = document.getElementById('btnFillTankMax');
     if (btnTopUp) {
       btnTopUp.addEventListener('click', () => {
-        state.storedWater = state.tankCapacity;
+        state.primaryTankWater = state.primaryTankCapacity;
+        state.secondaryTankWater = state.secondaryTankCapacity;
+        state.storedWater = state.primaryTankCapacity + state.secondaryTankCapacity;
+        state.tankCapacity = state.storedWater;
         saveState();
         syncUIWithState();
         recalculateAll();
         triggerInflowAnimation();
-        showToast(`Storage reservoir topped up to 100% (${formatNum(state.tankCapacity)} L)`, 'success');
+        showToast(`Both Primary (${formatNum(state.primaryTankCapacity)} L) & Secondary (${formatNum(state.secondaryTankCapacity)} L) reservoirs topped up to 100%!`, 'success');
       });
     }
 
     const btnDrain = document.getElementById('btnDrainTank');
     if (btnDrain) {
       btnDrain.addEventListener('click', () => {
+        state.primaryTankWater = 0;
+        state.secondaryTankWater = 0;
         state.storedWater = 0;
+        state.diversionValve = { status: 'STANDBY', flowRate: 0, lastDivertedLiters: 0, rechargeSpillLiters: 0 };
         saveState();
         syncUIWithState();
         recalculateAll();
-        showToast('Storage reservoir drained to 0 Liters', 'warning');
+        showToast('Both Primary and Secondary storage reservoirs drained to 0 Liters', 'warning');
       });
     }
 
@@ -2695,26 +3093,145 @@ To ensure high catchment efficiency and water clarity:
   // 13. HELPER UTILITIES
   // =========================================================================
 
-  function simulateDailyUsage() {
-    const hydro = calculateHydrology();
-    const demand = hydro.dailyDemandLiters;
-    const prev = state.storedWater;
+  // -------------------------------------------------------------------------
+  // Smart Diversion Ledger Updater
+  // -------------------------------------------------------------------------
+  function updateDiversionLedger(result) {
+    const lInflow = document.getElementById('ledgerInflowVal');
+    const lPrimary = document.getElementById('ledgerPrimaryVal');
+    const lSecondary = document.getElementById('ledgerSecondaryVal');
+    const lSpill = document.getElementById('ledgerSpillVal');
+    const lTag = document.getElementById('ledgerStatusTag');
 
-    if (prev <= 0) {
-      showToast('Storage tank is empty! Cannot consume water without municipal backup.', 'danger');
-      return;
+    if (lInflow) lInflow.textContent = `${formatNum(result.inflow)} L`;
+    if (lPrimary) lPrimary.textContent = `+${formatNum(result.toPrimary)} L`;
+    if (lSecondary) lSecondary.textContent = `+${formatNum(result.toSecondary)} L`;
+    if (lSpill) lSpill.textContent = `${formatNum(result.remainingOverflow)} L`;
+
+    if (lTag) {
+      if (result.bothFull && result.remainingOverflow > 0) {
+        lTag.className = 'badge badge-warning';
+        lTag.textContent = 'Dual Full (Spill)';
+      } else if (result.primaryFull && result.toSecondary > 0) {
+        lTag.className = 'badge badge-primary';
+        lTag.textContent = 'Diverting to Sec';
+      } else {
+        lTag.className = 'badge badge-success';
+        lTag.textContent = 'Primary Storage';
+      }
     }
+  }
 
-    const next = Math.max(0, prev - demand);
-    state.storedWater = next;
+  // -------------------------------------------------------------------------
+  // Apply Inflow with Automatic Smart Diversion
+  // -------------------------------------------------------------------------
+  function applyWaterInflow(inflowLiters, sourceLabel = 'Storm Inflow') {
+    const result = calculateWaterDiversion(
+      inflowLiters,
+      state.primaryTankWater,
+      state.primaryTankCapacity,
+      state.secondaryTankWater,
+      state.secondaryTankCapacity
+    );
+
+    state.primaryTankWater = result.newPrimaryStored;
+    state.secondaryTankWater = result.newSecondaryStored;
+    state.storedWater = result.newTotalStored;
+    state.tankCapacity = result.totalCapacity;
+
+    state.diversionValve = {
+      status: result.valveActive ? 'DIVERTING' : 'STANDBY',
+      flowRate: result.valveActive ? 42.5 : 0,
+      lastDivertedLiters: result.toSecondary,
+      rechargeSpillLiters: result.remainingOverflow
+    };
+
+    saveState();
+    syncUIWithState();
+    recalculateAll();
+    triggerInflowAnimation();
+    updateDiversionLedger(result);
+
+    if (result.bothFull && result.remainingOverflow > 0) {
+      showToast(`${sourceLabel} (+${formatNum(inflowLiters)} L): Dual reservoirs 100% full (${formatNum(result.totalCapacity)} L)! ${formatNum(result.remainingOverflow)} L diverted to recharge percolation pit.`, 'warning');
+    } else if (result.primaryFull && result.toSecondary > 0) {
+      showToast(`${sourceLabel} (+${formatNum(inflowLiters)} L): Primary tank full! Automatically diverted ${formatNum(result.toSecondary)} L to Secondary Auxiliary Tank.`, 'info');
+    } else {
+      showToast(`${sourceLabel} (+${formatNum(inflowLiters)} L) safely captured in Primary Storage (${formatNum(result.newPrimaryStored)} L).`, 'success');
+    }
+  }
+
+  let diversionDemoTimeout = null;
+  function runDiversionSimulationDemo() {
+    if (diversionDemoTimeout) clearTimeout(diversionDemoTimeout);
+
+    showToast("Starting Automated Diversion Simulation...", "info");
+
+    // Phase 1: Set Primary to 9,000 L (90% full) and Secondary to 0 L
+    state.primaryTankWater = Math.round(state.primaryTankCapacity * 0.90);
+    state.secondaryTankWater = 0;
+    state.storedWater = state.primaryTankWater;
     saveState();
     syncUIWithState();
     recalculateAll();
 
-    if (next === 0) {
-      showToast(`Consumed 1-Day Water (-${formatNum(demand)} L). Reservoir is now completely depleted!`, 'danger');
+    const bannerText = document.getElementById('diversionBannerText');
+    if (bannerText) {
+      bannerText.innerHTML = `<strong>Simulation Step 1/3:</strong> Rainstorm begins. Primary tank is at 90% (${formatNum(state.primaryTankWater)} L). Inflow arriving...`;
+    }
+    triggerInflowAnimation();
+
+    // Phase 2: Inflow arrives (4,500 L): 1,000 L fills Primary to 100%, 3,500 L diverts to Secondary
+    diversionDemoTimeout = setTimeout(() => {
+      applyWaterInflow(4500, 'Simulation Storm Surge');
+
+      if (bannerText) {
+        bannerText.innerHTML = `<strong>Simulation Step 2/3:</strong> <span style="color: #0284c7;">PRIMARY FULL!</span> Automated valve opened. Diverting 3,500 L into Secondary Tank!`;
+      }
+
+      // Phase 3: Cloudburst surge arrives (3,000 L): fills Secondary to 100%, remainder spills to recharge pit
+      diversionDemoTimeout = setTimeout(() => {
+        applyWaterInflow(3000, 'Simulation Cloudburst Overflow');
+
+        if (bannerText) {
+          bannerText.innerHTML = `<strong>Simulation Step 3/3:</strong> <span style="color: #d97706;">DUAL STORAGE 100% FULL!</span> Both tanks full. Remaining excess safely recharging aquifer!`;
+        }
+        showToast("Simulation Complete: Automated overflow diversion successfully demonstrated!", "success");
+      }, 2500);
+
+    }, 1400);
+  }
+
+  function simulateDailyUsage() {
+    const hydro = calculateHydrology();
+    const demand = hydro.dailyDemandLiters;
+    const totalStored = state.primaryTankWater + state.secondaryTankWater;
+
+    if (totalStored <= 0) {
+      showToast('Both storage tanks are empty! Cannot consume water without municipal backup.', 'danger');
+      return;
+    }
+
+    // Draw from Primary Tank first, then Secondary Tank
+    let remainingDemand = demand;
+    if (state.primaryTankWater >= remainingDemand) {
+      state.primaryTankWater -= remainingDemand;
+      remainingDemand = 0;
     } else {
-      showToast(`Consumed 1-Day Water (-${formatNum(demand)} L). ${formatNum(next)} L remaining.`, 'info');
+      remainingDemand -= state.primaryTankWater;
+      state.primaryTankWater = 0;
+      state.secondaryTankWater = Math.max(0, state.secondaryTankWater - remainingDemand);
+    }
+
+    state.storedWater = state.primaryTankWater + state.secondaryTankWater;
+    saveState();
+    syncUIWithState();
+    recalculateAll();
+
+    if (state.storedWater === 0) {
+      showToast(`Consumed 1-Day Water (-${formatNum(demand)} L). Both reservoirs are completely depleted!`, 'danger');
+    } else {
+      showToast(`Consumed 1-Day Water (-${formatNum(demand)} L). Remaining storage: ${formatNum(state.storedWater)} L (P: ${formatNum(state.primaryTankWater)} L, S: ${formatNum(state.secondaryTankWater)} L).`, 'info');
     }
   }
 
@@ -2722,7 +3239,13 @@ To ensure high catchment efficiency and water clarity:
     const pipe = document.getElementById('tankInflowPipe');
     if (pipe) {
       pipe.classList.add('active');
-      setTimeout(() => pipe.classList.remove('active'), 1200);
+      setTimeout(() => pipe.classList.remove('active'), 1400);
+    }
+
+    const secPipe = document.getElementById('secondaryInflowPipe');
+    if (secPipe && state.primaryTankWater >= state.primaryTankCapacity) {
+      secPipe.classList.add('active');
+      setTimeout(() => secPipe.classList.remove('active'), 1400);
     }
   }
 

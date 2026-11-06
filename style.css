@@ -2858,6 +2858,364 @@ input:checked+.slider.round:before {
 }
 
 /* ==========================================================================
+   SMART OVERFLOW DIVERSION SYSTEM STYLES
+   ========================================================================== */
+.dual-tank-stage {
+  padding: 1.5rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--slate-200);
+  position: relative;
+  overflow: hidden;
+}
+
+.tank-col {
+  flex: 1;
+  min-width: 170px;
+  max-width: 230px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tank-col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--slate-800);
+}
+
+.dual-tank-stage .tank-container-shell {
+  height: 290px;
+  width: 100%;
+  max-width: none;
+  gap: 0.4rem;
+}
+
+.dual-tank-stage .tank-ticks {
+  width: 50px;
+  font-size: 0.65rem;
+}
+
+/* Secondary tank distinct water styling */
+.secondary-water {
+  background: linear-gradient(180deg, #06b6d4 0%, #0891b2 60%, #0e7490 100%) !important;
+}
+
+/* Interconnecting Smart Diversion Junction */
+.diversion-junction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 15;
+}
+
+.diversion-pipe-conduit {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  background: #cbd5e1;
+  border: 2px solid #94a3b8;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0.5rem 0;
+}
+
+.diversion-water-stream {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #06b6d4);
+  transition: width 0.4s ease;
+}
+
+.diversion-water-stream.flowing {
+  width: 100%;
+  background-size: 20px 20px;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.4) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0.4) 75%, transparent 75%, transparent);
+  animation: pipeFlow 0.8s linear infinite;
+}
+
+@keyframes pipeFlow {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 0; }
+}
+
+.diversion-valve-box {
+  background: #ffffff;
+  border: 2px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.5rem;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  transition: all var(--transition-fast);
+}
+
+.diversion-valve-box.active {
+  border-color: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+  background: #ecfdf5;
+}
+
+.valve-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: var(--slate-100);
+  color: var(--slate-700);
+}
+
+.diversion-valve-box.active .valve-badge {
+  background: #10b981;
+  color: #ffffff;
+  animation: pulseBadge 1.5s infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.diversion-arrow {
+  font-size: 0.75rem;
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+.diversion-arrow.flowing {
+  opacity: 1;
+  color: var(--primary-600);
+  animation: arrowPulse 0.8s infinite alternate;
+}
+
+@keyframes arrowPulse {
+  0% { transform: translateX(-3px); }
+  100% { transform: translateX(3px); }
+}
+
+/* Tertiary Recharge Pit Node */
+.tertiary-recharge-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 0.5rem 0.35rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px dashed var(--slate-300);
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  transition: all var(--transition-fast);
+}
+
+.tertiary-recharge-node i {
+  font-size: 1.15rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.tertiary-recharge-node.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  border-style: solid;
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.25);
+}
+
+.tertiary-recharge-node.active i {
+  color: #0284c7;
+  animation: bounceRecharge 1s infinite;
+}
+
+@keyframes bounceRecharge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Diversion Status Banner */
+.diversion-live-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: #166534;
+}
+
+.diversion-live-banner.diverting {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.diversion-live-banner.overflowing {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.diversion-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.diversion-banner-content i {
+  font-size: 1.15rem;
+}
+
+/* Dual Tank Breakdown Subtext in Metrics */
+.ts-detail {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  margin-top: 0.25rem;
+}
+
+/* Dual Tank Configuration Controls */
+.dual-tank-config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tank-config-subcard {
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 0.9rem;
+}
+
+.tank-config-subcard h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--slate-800);
+}
+
+/* Diversion Simulator Studio */
+.diversion-sim-studio {
+  background: linear-gradient(145deg, #ffffff, #f0fdf4);
+  border: 1px solid #bbf7d0;
+}
+
+.diversion-sim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+}
+
+.diversion-custom-test-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  padding: 0.6rem 0.8rem;
+  background: #ffffff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+}
+
+.diversion-ledger-box {
+  background: #ffffff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+}
+
+.diversion-ledger-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--slate-600);
+  margin-bottom: 0.45rem;
+  text-transform: uppercase;
+}
+
+.diversion-ledger-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.d-step {
+  padding: 0.5rem 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--slate-50);
+  text-align: center;
+  border: 1px solid var(--slate-100);
+}
+
+.d-step span {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--slate-500);
+}
+
+.d-step strong {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-top: 0.15rem;
+  color: var(--slate-900);
+}
+
+.d-step.to-primary strong { color: var(--primary-700); }
+.d-step.to-secondary strong { color: #0891b2; }
+.d-step.to-spill strong { color: #d97706; }
+.d-step.to-valve strong { color: #059669; }
+
+@media (max-width: 900px) {
+  .dual-tank-stage {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .diversion-junction {
+    width: 100%;
+    margin: 0.75rem 0;
+  }
+  .dual-tank-config-grid {
+    grid-template-columns: 1fr;
+  }
+  .diversion-ledger-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ==========================================================================
    VIEW 5: WATER DEMAND & COVERAGE STYLES
    ========================================================================== */
 .demand-view-grid {

@@ -27,16 +27,36 @@ RainSmart is a responsive, client-side web application engineered to model, comp
 - **Demonstration Fallback**: Transparent toggle between **📡 Live Open-Meteo API** and **🧪 Calibrated Demo Mode** with clearly labeled status badges.
 - **Transfer Forecast Button**: 1-click button to load the forecasted rain depth directly into the Rooftop Calculator.
 
-### 2. 🛢️ Smart Water Tank Monitoring & Simulated IoT Telemetry
-- **Visual Level Indicator**: Animated fluid liquid wave with depth percentage, floating air bubbles, tick marks (0%, 25%, 50%, 75%, 100%), and active inflow stream pipe.
-- **Storage Metrics**: Total tank capacity (L), current stored water (L), available headroom space (L), and fill percentage (%).
+### 2. 🛢️ Smart Dual-Tank Monitoring & Automated Overflow Diversion System
+- **Dual Reservoir Architecture**: Full support for both a **Primary Tank (Main Catchment)** and a **Secondary Tank (Auxiliary Storage)** with user-customizable capacities and manual level controls.
+- **Automated Hydraulic Overflow Diversion**:
+  - Automatically calculates inflow allocations using pure hydrological equations:
+    $$\text{Primary Inflow} = \min(Q_{\text{in}}, \text{Headroom}_1)$$
+    $$\text{Diverted to Secondary} = \min(Q_{\text{in}} - \text{Primary Inflow}, \text{Headroom}_2)$$
+    $$\text{Groundwater Recharge Overflow} = \max(0, Q_{\text{in}} - \text{Primary Inflow} - \text{Diverted to Secondary})$$
+  - When the Primary Tank reaches 100%, the automated smart valve triggers **OPEN**, routing excess water into the Secondary Tank.
+  - When the Secondary Tank also reaches 100%, the tertiary spillway safely discharges surplus water to groundwater recharge percolation pits.
+- **Dual Visual Level Indicators**:
+  - Independent animated fluid liquid waves for both tanks with measurement ticks, individual volume counters, and fill percentages.
+  - Interconnecting **Smart Solenoid Valve & Diversion Pipe Conduit** with animated directional flow pulses when active.
+  - Tertiary Recharge Pit node displaying real-time aquifer infiltration.
+- **Combined System Metrics**:
+  - Real-time display of **Total Stored Water**, **Total Storage Capacity**, **Remaining Available Headroom Space**, and **Total Autonomy Days**.
+- **Interactive Diversion Simulation Studio**:
+  - **"Run Animated Diversion Demo"**: 3-stage animated storm demonstration showing Primary filling to 100%, smart valve triggering open to fill Secondary, and cloudburst spill recharging groundwater aquifers.
+  - **"Inject Storm Pulse (+5,000 L)"**: Instant storm pulse testing automated diversion routing.
+  - **Custom Inflow Tester**: Test any user-defined inflow volume (e.g. 8,000 L) and view the exact liter allocation in the live **Diversion Calculation Ledger**.
+- **Smart Active Alerts for Dual Tanks**:
+  - 🚨 **Primary Tank Full (100%)**: Triggers when Primary reaches capacity and smart valve is actively diverting.
+  - ℹ️ **Secondary Tank Filling**: Triggers when auxiliary storage is capturing diverted overflow.
+  - ⚠️ **Dual Reservoir Storage Full (100%)**: Triggers when both reservoirs are full and overflow is spilling to percolation recharge.
 - **Simulated IoT Telemetry Stream**: Explicitly labeled as **"Simulated IoT Telemetry (Ultrasonic JSN-SR04T Sensor)"** with:
   - Ultrasonic Water Depth ($m$ with real-time microscopic fluctuation)
   - Water Temperature (°C)
   - Turbidity & Clarity Index (NTU, indicating potable clarity)
   - Inflow & Outflow Flow Rate Sensors (L/min)
   - Telemetry Stream Pause / Resume toggle button.
-- **Threshold Warnings**: Dynamic alerts when tank reserve drops below 20% (low water) or exceeds 85% (overflow hazard).
+- **Clear Software Simulation Labeling**: Clearly identified as a software simulation across the UI, indicating that physical valves, sensors, and actuators are simulated.
 
 ### 3. 📈 Water Consumption Analytics
 - **Multi-Timeframe Time Series**: Switch between **Daily (7 Days)**, **Weekly (4 Weeks)**, and **Monthly (12 Months)** views.
@@ -119,10 +139,11 @@ RainSmart is a responsive, client-side web application engineered to model, comp
    - Navigate to **Rooftop Calculator** and toggle to **"Multiple Rooftop System"**.
    - Click **"Add Rooftop"**, name it *"Garage Outbuilding"*, set area to $80\text{ m}^2$, and select *GI Metal Sheet*.
    - Watch the individual yields update in real-time, then click **"Apply Combined Multi-Roof Harvest to Tank"**.
-3. **Smart Tank Monitoring & IoT Telemetry (1:30 - 2:00)**:
-   - Switch to **Smart Tank Monitor**: show the animated fluid wave tank with height ticks.
-   - Highlight the **Simulated IoT Telemetry Panel** (Ultrasonic depth, turbidity NTU, water temperature, flow rates) and click the **Live/Pause** button.
-   - Click **"Consume 1-Day Water"** to watch the water level drop and the autonomy days recalibrate.
+3. **Smart Dual-Tank Monitoring & Automated Overflow Diversion (1:30 - 2:00)**:
+   - Switch to **Smart Tank Monitor**: show the dual-reservoir visual stage (Primary Tank, Automated Diverter Valve, Secondary Auxiliary Tank, and Groundwater Recharge Pit).
+   - Click **"Run Animated Diversion Demo"** to demonstrate automated storm flow: Primary fills to 100%, valve flips to `ACTIVE`, water diverts to Secondary, and excess spills to Aquifer Recharge.
+   - Highlight the **Simulated IoT Telemetry Panel** (Ultrasonic depth, turbidity NTU, water temperature, flow rates) and note the clear software simulation labeling.
+   - Test a custom inflow (e.g. 8,000 L) in the **Diversion Simulator** and watch the live calculation ledger update.
 4. **Consumption Analytics & AI Chatbot (2:00 - 2:40)**:
    - Open **Usage Analytics**: toggle between **Daily**, **Weekly**, and **Monthly** charts.
    - Open **AI Water Advisor**: click the quick inquiry chip *"Prevent Monsoon Overflow?"* or *"Explain My Calculation"* to show contextual answers based on actual website data.
