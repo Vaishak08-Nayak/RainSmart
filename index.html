@@ -45,9 +45,9 @@
         </button>
       </div>
 
-      <!-- Quick Preset Selector for Demo -->
+      <!-- Quick Preset Selector for Building Types -->
       <div class="demo-preset-card">
-        <label for="buildingPresetSelect"><i class="fa-solid fa-building-user"></i> Demo Scenario</label>
+        <label for="buildingPresetSelect"><i class="fa-solid fa-building-user"></i> Building Type Preset</label>
         <select id="buildingPresetSelect" class="preset-dropdown">
           <option value="residential">🏡 Suburban Family Home</option>
           <option value="apartment">🏢 Urban Apartment Complex</option>
@@ -69,7 +69,7 @@
             <button class="nav-link" data-tab="weather">
               <i class="fa-solid fa-cloud-sun-rain"></i>
               <span>Live Weather & Rain</span>
-              <span class="nav-badge live-badge" id="sidebarWeatherBadge">Live API</span>
+              <span class="nav-badge live-badge" id="sidebarWeatherBadge">LIVE WEATHER</span>
             </button>
           </li>
           <li class="nav-item">
@@ -145,7 +145,11 @@
             <i class="fa-solid fa-bars"></i>
           </button>
           <div class="page-title-box">
-            <h1 id="pageTitle">System Overview</h1>
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <h1 id="pageTitle">System Overview</h1>
+              <span class="system-date-chip" id="topbarSystemDate"><i class="fa-regular fa-calendar"></i> Current
+                Date</span>
+            </div>
             <p id="pageSubtitle">AI-powered rainwater harvesting, live meteorological forecast & dynamic urban water
               management</p>
           </div>
@@ -161,7 +165,7 @@
               <span class="chip-sub"><strong id="topbarRainforecast">65 mm</strong> rain | <span id="topbarRainProb">85%
                   prob</span></span>
             </div>
-            <span class="chip-live-indicator" id="topbarLiveBadge">API LIVE</span>
+            <span class="chip-live-indicator" id="topbarLiveBadge">LIVE WEATHER</span>
           </div>
 
           <!-- Smart Alerts Bell Dropdown Trigger -->
@@ -185,6 +189,10 @@
 
           <!-- Quick Action Buttons -->
           <div class="topbar-actions">
+            <button class="btn btn-outline btn-sm" id="btnRefreshAllData"
+              title="Refresh Live Weather & Meteorological Archive">
+              <i class="fa-solid fa-arrows-rotate"></i> <span>Refresh Data</span>
+            </button>
             <button class="btn btn-secondary btn-sm" id="btnQuickSimulate" title="Simulate 1-Day Consumption Cycle">
               <i class="fa-solid fa-play"></i> <span>Cycle 1 Day</span>
             </button>
@@ -226,6 +234,44 @@
             </div>
           </div>
 
+          <!-- Real-Time Universal Location Search Bar (Dashboard) -->
+          <div class="dashboard-location-search-strip">
+            <div class="location-search-box-wrapper" id="dashLocationSearchWrapper">
+              <div class="search-input-field-wrap">
+                <i class="fa-solid fa-magnifying-glass search-leading-icon"></i>
+                <input type="text" id="dashLocationSearchInput" class="location-search-input"
+                  placeholder="Search any location, village, town, district or city (e.g. Moodbidri, Bantwal, Udupi, Mangaluru, Puttur, Alike)..."
+                  autocomplete="off" spellcheck="false">
+                <button type="button" class="btn-clear-search" id="btnDashClearLocationSearch" style="display:none;"
+                  title="Clear Search">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="search-spinner" id="dashLocationSearchSpinner" style="display:none;"></div>
+              </div>
+              <div class="location-suggestions-dropdown" id="dashLocationDropdown" style="display:none;">
+                <!-- Populated dynamically via Open-Meteo Geocoding API -->
+              </div>
+            </div>
+            <div class="location-quick-tags">
+              <span class="quick-tag-label"><i class="fa-solid fa-location-crosshairs text-primary"></i> Karnataka
+                Locations:</span>
+              <button type="button" class="btn-loc-tag" data-city="Moodbidri, Dakshina Kannada" data-lat="13.0665"
+                data-lon="74.9953"><i class="fa-solid fa-location-dot"></i> Moodbidri</button>
+              <button type="button" class="btn-loc-tag" data-city="Mangaluru, Dakshina Kannada" data-lat="12.9172"
+                data-lon="74.8560"><i class="fa-solid fa-location-dot"></i> Mangaluru</button>
+              <button type="button" class="btn-loc-tag" data-city="Udupi, Karnataka" data-lat="13.3347"
+                data-lon="74.7462"><i class="fa-solid fa-location-dot"></i> Udupi</button>
+              <button type="button" class="btn-loc-tag" data-city="Bantwal, Dakshina Kannada" data-lat="12.8905"
+                data-lon="75.0349"><i class="fa-solid fa-location-dot"></i> Bantwal</button>
+              <button type="button" class="btn-loc-tag" data-city="Puttur, Dakshina Kannada" data-lat="12.7598"
+                data-lon="75.2017"><i class="fa-solid fa-location-dot"></i> Puttur</button>
+              <button type="button" class="btn-loc-tag" data-city="Alike, Dakshina Kannada" data-lat="12.7845"
+                data-lon="75.1432"><i class="fa-solid fa-location-dot"></i> Alike</button>
+              <button type="button" class="btn-loc-tag" data-city="Bengaluru, Karnataka" data-lat="12.9719"
+                data-lon="77.5937"><i class="fa-solid fa-location-dot"></i> Bengaluru</button>
+            </div>
+          </div>
+
           <!-- Live Weather & Rain Forecast Summary Card on Dashboard -->
           <div class="dashboard-weather-bar">
             <div class="dw-left">
@@ -234,8 +280,8 @@
               </div>
               <div class="dw-info">
                 <div class="dw-meta-row">
-                  <span class="live-status-pill" id="dashWeatherDataSource"><span class="pulse-dot"></span> Live
-                    Open-Meteo API</span>
+                  <span class="status-pill status-live" id="dashWeatherDataSource"><span class="pulse-dot"></span> LIVE
+                    WEATHER &bull; Open-Meteo API</span>
                   <span class="dw-city" id="dashWeatherCity">Bengaluru Urban</span>
                 </div>
                 <h3 id="dashWeatherTemp">24.5°C &bull; Monsoon Downpour</h3>
@@ -335,7 +381,8 @@
               <div class="card-header-flex">
                 <div class="card-title-group">
                   <h3><i class="fa-solid fa-chart-column"></i> Rainfall vs. Harvest Potential</h3>
-                  <p>Historical & forecasted precipitation vs collectible rainwater yield</p>
+                  <p id="rainfallChartSubtitle">Verified historical precipitation (Open-Meteo Archive API) vs
+                    collectible rainwater yield</p>
                 </div>
                 <div class="chart-legend-custom">
                   <span class="legend-item"><span class="legend-color-dot dot-rainfall"></span> Rain (mm)</span>
@@ -400,8 +447,10 @@
                   <p>Real-time atmospheric telemetry via Open-Meteo API with automatic rainwater harvest modeling</p>
                 </div>
                 <div class="weather-mode-badges">
-                  <span class="badge badge-primary" id="weatherSourceBadge">📡 Live Open-Meteo API</span>
-                  <button class="btn btn-outline btn-sm" id="btnToggleWeatherDemo">Switch to Demo Mode</button>
+                  <span class="status-pill status-live" id="weatherSourceBadge"><span class="pulse-dot"></span> LIVE
+                    WEATHER &bull; Open-Meteo API</span>
+                  <button class="btn btn-outline btn-sm" id="btnRefreshWeatherTab"><i
+                      class="fa-solid fa-arrows-rotate"></i> Refresh Live Data</button>
                 </div>
               </div>
 
@@ -425,11 +474,16 @@
                     York</button>
                 </div>
 
-                <div class="custom-coord-input">
-                  <input type="text" id="weatherCustomCity" class="form-control"
-                    placeholder="Search City or enter Lat, Lon..." style="max-width: 250px;">
-                  <button class="btn btn-secondary btn-sm" id="btnFetchCustomWeather"><i
-                      class="fa-solid fa-magnifying-glass"></i> Fetch</button>
+                <div class="custom-coord-input location-search-box-wrapper" id="weatherLocationSearchWrapper"
+                  style="position: relative; max-width: 320px; flex: 1;">
+                  <div class="search-input-field-wrap">
+                    <input type="text" id="weatherCustomCity" class="form-control location-search-input"
+                      placeholder="Search village, town, district or city..." autocomplete="off" spellcheck="false"
+                      style="padding-right: 2rem;">
+                    <div class="search-spinner" id="weatherLocationSearchSpinner" style="display:none; right: 0.6rem;">
+                    </div>
+                  </div>
+                  <div class="location-suggestions-dropdown" id="weatherLocationDropdown" style="display:none;"></div>
                 </div>
               </div>
 
@@ -443,6 +497,18 @@
                     <strong class="lw-val" id="weatherCurTemp">24.5 °C</strong>
                   </div>
                   <span class="lw-sub" id="weatherConditionText">Overcast & Showers</span>
+                  <span class="lw-feels-like" id="weatherFeelsLikeText"
+                    style="font-size: 0.68rem; color: var(--slate-500); display: block; margin-top: 0.2rem;">Apparent:
+                    26.0 °C</span>
+                </div>
+
+                <div class="lw-box">
+                  <span class="lw-lbl">Current Precipitation</span>
+                  <div class="lw-val-row">
+                    <i class="fa-solid fa-droplet lw-icon-rain"></i>
+                    <strong class="lw-val" id="weatherCurPrecip">0.0 mm/h</strong>
+                  </div>
+                  <span class="lw-sub" id="weatherCurPrecipSub">Live Observed Rate</span>
                 </div>
 
                 <div class="lw-box">
@@ -451,7 +517,7 @@
                     <i class="fa-solid fa-cloud-showers-heavy lw-icon-rain"></i>
                     <strong class="lw-val" id="weather24hRain">65.0 mm</strong>
                   </div>
-                  <span class="lw-sub">Heavy Precipitation Expected</span>
+                  <span class="lw-sub" id="weather24hRainSub">Next 24h Prediction</span>
                 </div>
 
                 <div class="lw-box">
@@ -460,7 +526,7 @@
                     <i class="fa-solid fa-percent lw-icon-prob"></i>
                     <strong class="lw-val" id="weatherRainProb">85 %</strong>
                   </div>
-                  <span class="lw-sub">High Confidence Interval</span>
+                  <span class="lw-sub">Forecast Confidence</span>
                 </div>
 
                 <div class="lw-box">
@@ -469,7 +535,7 @@
                     <i class="fa-solid fa-wind lw-icon-wind"></i>
                     <strong class="lw-val" id="weatherWindHumidity">18 km/h | 82%</strong>
                   </div>
-                  <span class="lw-sub">Southwest Monsoon Breeze</span>
+                  <span class="lw-sub">Surface Meteorology</span>
                 </div>
 
               </div>
@@ -834,14 +900,16 @@
             <div class="dashboard-card tank-visual-card">
               <div class="card-header-flex">
                 <div class="card-title-group">
-                  <h3><i class="fa-solid fa-cubes-stacked"></i> Smart Dual-Tank Reservoir & Automated Overflow Diversion</h3>
+                  <h3><i class="fa-solid fa-cubes-stacked"></i> Smart Dual-Tank Reservoir & Automated Overflow Diversion
+                  </h3>
                   <p>Real-time physical telemetry, automatic overflow routing & auxiliary tank capture</p>
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                   <div class="tank-badge-live" id="tankStateBadge">
                     <span class="badge-dot pulse"></span> <span id="tankStateText">Optimal Level</span>
                   </div>
-                  <span class="badge badge-light"><i class="fa-solid fa-microchip"></i> Simulation Mode</span>
+                  <span class="status-pill status-sensor-off" id="tankHardwareBadge"><i
+                      class="fa-solid fa-plug-circle-xmark"></i> SENSOR NOT CONNECTED</span>
                 </div>
               </div>
 
@@ -896,7 +964,8 @@
                   <div class="diversion-valve-box" id="diversionValveBox">
                     <i class="fa-solid fa-faucet-drip text-primary" id="diversionValveIcon"></i>
                     <span class="valve-badge" id="diversionValveBadge">VALVE: STANDBY</span>
-                    <small id="diversionFlowRate" style="font-size: 0.62rem; color: var(--slate-500); font-weight: 600;">0 L/min Transfer</small>
+                    <small id="diversionFlowRate"
+                      style="font-size: 0.62rem; color: var(--slate-500); font-weight: 600;">0 L/min Transfer</small>
                   </div>
 
                   <div class="diversion-pipe-conduit">
@@ -905,7 +974,9 @@
 
                   <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <i class="fa-solid fa-angles-right diversion-arrow" id="diversionArrow"></i>
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--slate-600); text-transform: uppercase;">Overflow Diverter</span>
+                    <span
+                      style="font-size: 0.65rem; font-weight: 700; color: var(--slate-600); text-transform: uppercase;">Overflow
+                      Diverter</span>
                   </div>
                 </div>
 
@@ -955,7 +1026,8 @@
                 <!-- Tertiary Overflow / Aquifer Recharge Node -->
                 <div class="tertiary-recharge-node" id="tertiaryRechargeNode">
                   <i class="fa-solid fa-water"></i>
-                  <strong id="rechargeStatusText" style="font-size: 0.7rem; color: var(--slate-800);">Recharge Standby</strong>
+                  <strong id="rechargeStatusText" style="font-size: 0.7rem; color: var(--slate-800);">Recharge
+                    Standby</strong>
                   <span id="rechargeSpillVol" style="font-size: 0.62rem; color: var(--slate-500);">0 L spilled</span>
                   <span style="font-size: 0.58rem; color: var(--slate-400); margin-top: 0.2rem;">Percolation Pit</span>
                 </div>
@@ -966,9 +1038,11 @@
               <div class="diversion-live-banner" id="diversionLiveBanner">
                 <div class="diversion-banner-content">
                   <i class="fa-solid fa-shuffle" id="diversionBannerIcon"></i>
-                  <span id="diversionBannerText"><strong>Smart Valve: STANDBY</strong> &bull; Primary tank has available space. Secondary auxiliary tank is ready to receive overflow.</span>
+                  <span id="diversionBannerText"><strong>Smart Valve: STANDBY</strong> &bull; Primary tank has available
+                    space. Secondary auxiliary tank is ready to receive overflow.</span>
                 </div>
-                <span class="badge badge-light" style="font-size: 0.68rem; white-space: nowrap;"><i class="fa-solid fa-code"></i> Software Simulation Mode</span>
+                <span class="badge badge-light" style="font-size: 0.68rem; white-space: nowrap;"><i
+                    class="fa-solid fa-code"></i> Software Simulation Mode</span>
               </div>
 
               <!-- Tank Status Quick Bar: Total Stored & Remaining Capacity -->
@@ -1000,47 +1074,52 @@
             <!-- Right: Simulated IoT Sensor Telemetry & Tank Controls -->
             <div class="tank-controls-pane">
 
-              <!-- Simulated Sensor Stream Card -->
+              <!-- Tank Hardware Telemetry & Connection Status Card -->
               <div class="dashboard-card sensor-telemetry-card">
                 <div class="card-header-flex">
                   <div class="card-title-group">
-                    <h3><i class="fa-solid fa-satellite-dish text-primary"></i> Smart IoT Telemetry Stream</h3>
-                    <p>Live sensor stream &bull; <span class="badge badge-light">Simulated IoT Telemetry</span></p>
+                    <h3><i class="fa-solid fa-gauge-high text-primary"></i> Tank Hardware Status & Telemetry</h3>
+                    <p>Physical IoT Sensor Interface &bull; <span class="status-pill status-sensor-off"
+                        id="sensorStatusBadge"><i class="fa-solid fa-plug-circle-xmark"></i> SENSOR NOT CONNECTED</span>
+                    </p>
                   </div>
-                  <button class="btn btn-outline btn-sm" id="btnToggleSensorStream">
-                    <i class="fa-solid fa-pause" id="sensorStreamIcon"></i> <span id="sensorStreamText">Live</span>
-                  </button>
+                  <span class="status-pill status-sensor-off" style="font-size: 0.68rem;"><i
+                      class="fa-solid fa-microchip"></i> Hardware Offline</span>
                 </div>
 
                 <div class="sensor-readings-grid">
                   <div class="sensor-metric-box">
-                    <span class="sm-lbl">Ultrasonic Depth</span>
-                    <strong class="sm-val" id="sensorDepthVal">1.84 m</strong>
-                    <span class="sm-sub" id="sensorLevelJitter">Level: 68.0%</span>
+                    <span class="sm-lbl">Tank Level Sensor</span>
+                    <strong class="sm-val text-muted" id="sensorDepthVal" style="font-size:0.85rem;">Hardware sensor not
+                      connected</strong>
+                    <span class="sm-sub" id="sensorLevelJitter">Manual entry active (8,000 L)</span>
                   </div>
 
                   <div class="sensor-metric-box">
                     <span class="sm-lbl">Water Temperature</span>
-                    <strong class="sm-val" id="sensorTempVal">21.8 °C</strong>
-                    <span class="sm-sub">Optimal Storage</span>
+                    <strong class="sm-val text-muted" id="sensorTempVal" style="font-size:0.85rem;">Sensor not
+                      connected</strong>
+                    <span class="sm-sub" id="sensorTempSub">Requires thermal probe</span>
                   </div>
 
                   <div class="sensor-metric-box">
-                    <span class="sm-lbl">Water Turbidity</span>
-                    <strong class="sm-val text-green" id="sensorTurbidityVal">1.2 NTU</strong>
-                    <span class="sm-sub">Potable Clarity</span>
+                    <span class="sm-lbl">Turbidity / Clarity</span>
+                    <strong class="sm-val text-muted" id="sensorTurbidityVal" style="font-size:0.85rem;">Sensor not
+                      connected</strong>
+                    <span class="sm-sub" id="sensorTurbSub">Requires optical probe</span>
                   </div>
 
                   <div class="sensor-metric-box">
-                    <span class="sm-lbl">Inflow / Outflow</span>
+                    <span class="sm-lbl">Calculated Flow Rate</span>
                     <strong class="sm-val" id="sensorFlowVal">0.0 / 0.38</strong>
-                    <span class="sm-sub">Liters / min</span>
+                    <span class="sm-sub">ESTIMATED DATA (L/min)</span>
                   </div>
                 </div>
 
                 <div class="sensor-footer-status">
-                  <span class="sensor-pulse-dot"></span>
-                  <span id="sensorSyncTimestamp">Last packet: Just now &bull; Simulated JSN-SR04T Sensor</span>
+                  <span class="dot-red" style="margin-right:0.35rem;"></span>
+                  <span id="sensorSyncTimestamp">Status: SENSOR NOT CONNECTED &bull; Manual Tank Level Entry Active
+                    &bull; No Physical IoT Sensor Detected</span>
                 </div>
               </div>
 
@@ -1065,24 +1144,29 @@
                     <h4><i class="fa-solid fa-box-archive text-primary"></i> Primary Tank (Main)</h4>
 
                     <div class="form-group" style="margin-bottom: 0.65rem;">
-                      <label for="primaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity (Liters)</label>
+                      <label for="primaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity
+                        (Liters)</label>
                       <div class="input-with-button">
-                        <input type="number" id="primaryTankCapacityInput" class="form-control" value="10000" min="500" max="500000" step="500">
+                        <input type="number" id="primaryTankCapacityInput" class="form-control" value="10000" min="500"
+                          max="500000" step="500">
                         <button class="btn btn-outline btn-sm" id="btnUpdatePrimaryCap">Save</button>
                       </div>
                       <div class="quick-cap-chips">
                         <button type="button" class="btn-chip" data-target="primary" data-cap="2000">2k</button>
                         <button type="button" class="btn-chip" data-target="primary" data-cap="5000">5k</button>
-                        <button type="button" class="btn-chip active" data-target="primary" data-cap="10000">10k</button>
+                        <button type="button" class="btn-chip active" data-target="primary"
+                          data-cap="10000">10k</button>
                         <button type="button" class="btn-chip" data-target="primary" data-cap="25000">25k</button>
                         <button type="button" class="btn-chip" data-target="primary" data-cap="50000">50k</button>
                       </div>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label for="primaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level (Liters)</label>
+                      <label for="primaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level
+                        (Liters)</label>
                       <div class="input-with-button">
-                        <input type="number" id="primaryTankCurrentInput" class="form-control" value="6800" min="0" max="500000" step="100">
+                        <input type="number" id="primaryTankCurrentInput" class="form-control" value="6800" min="0"
+                          max="500000" step="100">
                         <button class="btn btn-primary btn-sm" id="btnSetPrimaryLevel">Set</button>
                       </div>
                     </div>
@@ -1093,24 +1177,29 @@
                     <h4><i class="fa-solid fa-boxes-stacked text-teal"></i> Secondary Tank (Auxiliary)</h4>
 
                     <div class="form-group" style="margin-bottom: 0.65rem;">
-                      <label for="secondaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity (Liters)</label>
+                      <label for="secondaryTankCapacityInput" style="font-size: 0.72rem; font-weight: 700;">Capacity
+                        (Liters)</label>
                       <div class="input-with-button">
-                        <input type="number" id="secondaryTankCapacityInput" class="form-control" value="5000" min="500" max="500000" step="500">
+                        <input type="number" id="secondaryTankCapacityInput" class="form-control" value="5000" min="500"
+                          max="500000" step="500">
                         <button class="btn btn-outline btn-sm" id="btnUpdateSecondaryCap">Save</button>
                       </div>
                       <div class="quick-cap-chips">
                         <button type="button" class="btn-chip" data-target="secondary" data-cap="1000">1k</button>
                         <button type="button" class="btn-chip" data-target="secondary" data-cap="2500">2.5k</button>
-                        <button type="button" class="btn-chip active" data-target="secondary" data-cap="5000">5k</button>
+                        <button type="button" class="btn-chip active" data-target="secondary"
+                          data-cap="5000">5k</button>
                         <button type="button" class="btn-chip" data-target="secondary" data-cap="10000">10k</button>
                         <button type="button" class="btn-chip" data-target="secondary" data-cap="20000">20k</button>
                       </div>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                      <label for="secondaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level (Liters)</label>
+                      <label for="secondaryTankCurrentInput" style="font-size: 0.72rem; font-weight: 700;">Current Level
+                        (Liters)</label>
                       <div class="input-with-button">
-                        <input type="number" id="secondaryTankCurrentInput" class="form-control" value="1200" min="0" max="500000" step="100">
+                        <input type="number" id="secondaryTankCurrentInput" class="form-control" value="1200" min="0"
+                          max="500000" step="100">
                         <button class="btn btn-primary btn-sm" id="btnSetSecondaryLevel">Set</button>
                       </div>
                     </div>
@@ -1142,8 +1231,10 @@
 
                 <!-- Custom Inflow Tester -->
                 <div class="diversion-custom-test-bar">
-                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-700);"><i class="fa-solid fa-droplet text-blue"></i> Test Inflow:</span>
-                  <input type="number" id="diversionTestInflowInput" class="form-control" value="8000" min="100" max="100000" step="500" style="max-width: 120px; font-size: 0.82rem;">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--slate-700);"><i
+                      class="fa-solid fa-droplet text-blue"></i> Test Inflow:</span>
+                  <input type="number" id="diversionTestInflowInput" class="form-control" value="8000" min="100"
+                    max="100000" step="500" style="max-width: 120px; font-size: 0.82rem;">
                   <span class="unit-text" style="font-size: 0.8rem; font-weight: 700;">Liters</span>
                   <button class="btn btn-outline btn-sm" id="btnApplyTestInflow">Simulate & Divert</button>
                 </div>
@@ -1206,7 +1297,8 @@
                   </div>
                   <div class="alert-info-wrap">
                     <strong id="tankOverflowTitle">No Overflow Risk Currently</strong>
-                    <p id="tankOverflowDesc">Dual storage system has 7,000 L of available space before reaching spill level.</p>
+                    <p id="tankOverflowDesc">Dual storage system has 7,000 L of available space before reaching spill
+                      level.</p>
                   </div>
                 </div>
 
@@ -1549,43 +1641,46 @@
 
               <!-- Quick Question Chips -->
               <div class="ai-quick-prompts">
-                <span class="quick-prompt-title">Quick Inquiries:</span>
-                <button type="button" class="btn-prompt" data-query="How can I prevent tank overflow during monsoons?">
-                  🌧️ Prevent Monsoon Overflow?
+                <span class="quick-prompt-title">Suggested Questions:</span>
+                <button type="button" class="btn-prompt" data-query="How much rainwater can I collect?">
+                  💧 How much rainwater can I collect?
+                </button>
+                <button type="button" class="btn-prompt" data-query="Is my tank capacity sufficient?">
+                  🛢️ Is my tank capacity sufficient?
+                </button>
+                <button type="button" class="btn-prompt" data-query="How can I prevent tank overflow?">
+                  🌧️ How can I prevent tank overflow?
+                </button>
+                <button type="button" class="btn-prompt" data-query="What is my current rainfall situation?">
+                  🌦️ What is my current rainfall situation?
+                </button>
+                <button type="button" class="btn-prompt" data-query="How can I reduce water wastage?">
+                  💡 How can I reduce water wastage?
                 </button>
                 <button type="button" class="btn-prompt"
-                  data-query="Explain my rainwater calculation formula and runoff losses.">
-                  📐 Explain My Calculation
-                </button>
-                <button type="button" class="btn-prompt" data-query="How many days will my current stored water last?">
-                  ⏳ Water Coverage Duration?
-                </button>
-                <button type="button" class="btn-prompt"
-                  data-query="What low-cost fixtures save the most domestic water?">
-                  💡 High-ROI Fixtures
-                </button>
-                <button type="button" class="btn-prompt"
-                  data-query="How to calculate collection from multiple rooftops?">
-                  🏢 Multi-Rooftop Guide
+                  data-query="What is groundwater recharge and how does it help?">
+                  🌱 What is groundwater recharge?
                 </button>
               </div>
 
               <!-- Advisor Output Dialogue Box -->
               <div class="advisor-response-box" id="advisorOutput">
-                <div class="advisor-loading-spinner" id="advisorLoading" style="display: none;">
-                  <div class="spinner"></div>
-                  <span>Analyzing hydrological parameters & live catchment telemetry...</span>
-                </div>
                 <div class="advisor-stream" id="advisorStream">
                   <!-- Dynamically populated by script.js -->
+                </div>
+                <div class="advisor-loading-spinner" id="advisorLoading" style="display: none;">
+                  <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                  </div>
+                  <span>RainSmart AI is analyzing your live telemetry & drafting response...</span>
                 </div>
               </div>
 
               <!-- Custom Question Input Bar -->
               <div class="advisor-input-bar">
-                <input type="text" id="advisorUserInput" class="form-control"
-                  placeholder="Ask AI Advisor about water savings, multiple roofs, overflow prevention, or storage...">
-                <button class="btn btn-primary" id="btnAskAdvisor">
+                <textarea id="advisorUserInput" class="form-control advisor-textarea" rows="1"
+                  placeholder="Ask RainSmart AI about rainwater harvesting, tank sizing, overflow, weather, or water conservation... (Enter to send, Shift+Enter for new line)"></textarea>
+                <button class="btn btn-primary" id="btnAskAdvisor" title="Send Question">
                   <i class="fa-solid fa-paper-plane"></i> <span>Ask</span>
                 </button>
                 <button class="btn btn-outline btn-icon" id="btnClearChatHistory" title="Clear Chat History">

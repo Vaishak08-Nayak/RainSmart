@@ -1,0 +1,20 @@
+{
+  "name": "rainsmart-water-management",
+  "version": "2.0.0",
+  "description": "RainSmart – AI-Powered Intelligent Rainwater Harvesting and Urban Water Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "rainwater-harvesting",
+    "open-meteo",
+    "gemini-ai",
+    "urban-water-management",
+    "smart-overflow-diversion",
+    "chartjs"
+  ],
+  "author": "RainSmart Team",
+  "license": "MIT"
+}
