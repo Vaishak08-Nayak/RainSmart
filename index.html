@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RainSmart – AI-Powered Intelligent Rainwater Harvesting & Urban Water Management</title>
+
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js 4.4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="theme-light">
+  <div class="app-container">
+
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon-wrapper">
+            <i class="fa-solid fa-cloud-showers-water"></i>
+          </div>
+          <div class="brand-text">
+            <h2>RainSmart<span class="accent-dot">.</span></h2>
+            <span class="brand-tagline">AI Urban Water OS</span>
+          </div>
+        </div>
+        <button class="mobile-close-btn" id="sidebarCloseBtn" aria-label="Close navigation">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Preset Selector for Demo -->
+      <div class="demo-preset-card">
+        <label for="buildingPresetSelect"><i class="fa-solid fa-building-user"></i> Demo Scenario</label>
+        <select id="buildingPresetSelect" class="preset-dropdown">
+          <option value="residential">🏡 Suburban Family Home</option>
+          <option value="apartment">🏢 Urban Apartment Complex</option>
+          <option value="school">🏫 Green School Campus</option>
+          <option value="commercial">🏭 Industrial Warehouse</option>
+        </select>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="nav-item">
+            <button class="nav-link active" data-tab="dashboard">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="weather">
+              <i class="fa-solid fa-cloud-sun-rain"></i>
+              <span>Live Weather & Rain</span>
+              <span class="nav-badge live-badge" id="sidebarWeatherBadge">Live API</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="calculator">
+              <i class="fa-solid fa-calculator"></i>
+              <span>Rooftop Calculator</span>
+              <span class="nav-badge">V=R·A·C</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="tank">
+              <i class="fa-solid fa-cubes-stacked"></i>
+              <span>Smart Tank Monitor</span>
+              <span class="nav-status-dot" id="sidebarTankDot"></span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="demand">
+              <i class="fa-solid fa-users-between-lines"></i>
+              <span>Water Demand</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="analytics">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>Usage Analytics</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="advisor">
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>AI Water Advisor</span>
+              <span class="nav-badge pulse-badge">Chatbot</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-tab="reports">
+              <i class="fa-solid fa-file-invoice"></i>
+              <span>Reports & Downloads</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Sidebar Footer Status -->
+      <div class="sidebar-footer">
+        <div class="water-security-pill">
+          <div class="pill-info">
+            <span class="pill-label">Water Autonomy</span>
+            <strong class="pill-val" id="sidebarAutonomyDays">12.6 Days</strong>
+          </div>
+          <div class="pill-bar">
+            <div class="pill-bar-fill" id="sidebarAutonomyBar" style="width: 68%;"></div>
+          </div>
+        </div>
+        <div class="system-sync">
+          <span class="sync-indicator"></span>
+          <span>Live Telemetry & Storage Synced</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Backdrop for mobile drawer -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="main-wrapper">
+
+      <!-- Top Navigation Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="sidebarToggleBtn" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="page-title-box">
+            <h1 id="pageTitle">System Overview</h1>
+            <p id="pageSubtitle">AI-powered rainwater harvesting, live meteorological forecast & dynamic urban water
+              management</p>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Live Weather Quick Badge (Click opens Weather Tab) -->
+          <div class="weather-chip" id="topbarWeatherChip" role="button"
+            title="Click to view full Live Weather & Forecast" data-tab="weather">
+            <i class="fa-solid fa-cloud-showers-heavy weather-icon" id="topbarWeatherIcon"></i>
+            <div>
+              <span class="chip-title" id="topbarCityName">Bengaluru, IN</span>
+              <span class="chip-sub"><strong id="topbarRainforecast">65 mm</strong> rain | <span id="topbarRainProb">85%
+                  prob</span></span>
+            </div>
+            <span class="chip-live-indicator" id="topbarLiveBadge">API LIVE</span>
+          </div>
+
+          <!-- Smart Alerts Bell Dropdown Trigger -->
+          <div class="alerts-dropdown-wrapper">
+            <button class="btn btn-icon btn-outline alert-bell-btn" id="btnAlertsBell" title="Smart System Alerts">
+              <i class="fa-solid fa-bell"></i>
+              <span class="alert-count-badge" id="topbarAlertCount">2</span>
+            </button>
+
+            <!-- Alerts Flyout Menu -->
+            <div class="alerts-flyout" id="alertsFlyout">
+              <div class="flyout-header">
+                <h4><i class="fa-solid fa-triangle-exclamation"></i> Smart System Alerts</h4>
+                <button class="btn-text-sm" id="btnDismissAllAlerts">Dismiss All</button>
+              </div>
+              <div class="flyout-body" id="flyoutAlertsList">
+                <!-- Dynamically populated by script.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="topbar-actions">
+            <button class="btn btn-secondary btn-sm" id="btnQuickSimulate" title="Simulate 1-Day Consumption Cycle">
+              <i class="fa-solid fa-play"></i> <span>Cycle 1 Day</span>
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnExportCSVQuick" title="Download Water Audit CSV">
+              <i class="fa-solid fa-file-csv"></i> <span>Export CSV</span>
+            </button>
+            <button class="btn btn-icon btn-outline" id="btnResetData" title="Reset to Defaults">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic Content Views Container -->
+      <div class="content-body">
+
+        <!-- ======================================================== -->
+        <!-- VIEW 1: DASHBOARD                                       -->
+        <!-- ======================================================== -->
+        <section class="tab-pane active" id="view-dashboard">
+
+          <!-- Smart Alerts Banner Strip (Contextual & Dismissible) -->
+          <div class="alert-banner" id="dashboardAlertBanner">
+            <div class="alert-icon" id="dashboardAlertIcon">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-heading-row">
+                <span class="alert-severity-tag info" id="dashboardAlertTag">NORMAL</span>
+                <h4 id="alertBannerTitle">System Operating Efficiently</h4>
+              </div>
+              <p id="alertBannerText">Your rainwater reserves are sufficient for 12+ days. Catchment filtration
+                efficiency is rated at 90%.</p>
+            </div>
+            <div class="alert-actions-group">
+              <button class="alert-action-btn" id="alertBannerAction" data-tab="tank">View Storage</button>
+              <button class="alert-dismiss-btn" id="btnDismissMainBanner" title="Dismiss Alert"><i
+                  class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <!-- Live Weather & Rain Forecast Summary Card on Dashboard -->
+          <div class="dashboard-weather-bar">
+            <div class="dw-left">
+              <div class="dw-icon-box">
+                <i class="fa-solid fa-cloud-bolt" id="dashWeatherBigIcon"></i>
+              </div>
+              <div class="dw-info">
+                <div class="dw-meta-row">
+                  <span class="live-status-pill" id="dashWeatherDataSource"><span class="pulse-dot"></span> Live
+                    Open-Meteo API</span>
+                  <span class="dw-city" id="dashWeatherCity">Bengaluru Urban</span>
+                </div>
+                <h3 id="dashWeatherTemp">24.5°C &bull; Monsoon Downpour</h3>
+                <p id="dashWeatherForecastSummary">Heavy rain expected in the next 24-48 hours. Estimated <strong>65
+                    mm</strong> precipitation with <strong>85% probability</strong>.</p>
+              </div>
+            </div>
+            <div class="dw-right">
+              <div class="harvest-potential-chip">
+                <span class="hp-label">Potential Rain Harvest</span>
+                <strong class="hp-val" id="dashForecastHarvestVal">11,700 Liters</strong>
+                <span class="hp-sub">Using live forecast & roof catchment</span>
+              </div>
+              <button class="btn btn-outline btn-sm" data-tab="weather">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Full Forecast
+              </button>
+            </div>
+          </div>
+
+          <!-- Primary Metric Cards (KPI Grid) -->
+          <div class="metrics-grid">
+
+            <!-- Card 1: Estimated Harvest -->
+            <div class="metric-card card-harvest">
+              <div class="metric-header">
+                <span class="metric-label">Estimated Harvest</span>
+                <span class="metric-icon-badge"><i class="fa-solid fa-cloud-showers-heavy"></i></span>
+              </div>
+              <div class="metric-value-wrap">
+                <h3 class="metric-value" id="kpiHarvestVolume">24,300 <span class="metric-unit">L</span></h3>
+                <span class="metric-sub" id="kpiHarvestSub">Based on 65 mm storm event</span>
+              </div>
+              <div class="metric-footer">
+                <span class="trend-badge positive"><i class="fa-solid fa-arrow-trend-up"></i> +18% vs avg</span>
+                <span class="metric-footer-text">V = R × A × C</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Available Stored Water & Tank Headroom -->
+            <div class="metric-card card-storage">
+              <div class="metric-header">
+                <span class="metric-label">Available Stored Water</span>
+                <span class="metric-icon-badge"><i class="fa-solid fa-water"></i></span>
+              </div>
+              <div class="metric-value-wrap">
+                <h3 class="metric-value" id="kpiStoredWater">6,800 <span class="metric-unit">L</span></h3>
+                <span class="metric-sub" id="kpiTankCapacitySub">Capacity: 10,000 L (68% full)</span>
+              </div>
+              <div class="metric-progress-track">
+                <div class="metric-progress-fill" id="kpiStorageProgress" style="width: 68%;"></div>
+              </div>
+              <div class="metric-footer">
+                <span class="status-indicator good" id="kpiStorageStatus">Safe Storage</span>
+                <span class="metric-footer-text" id="kpiRemainingHeadroom">3,200 L space left</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Daily Household Demand -->
+            <div class="metric-card card-demand">
+              <div class="metric-header">
+                <span class="metric-label">Daily Water Demand</span>
+                <span class="metric-icon-badge"><i class="fa-solid fa-faucet-drip"></i></span>
+              </div>
+              <div class="metric-value-wrap">
+                <h3 class="metric-value" id="kpiDailyDemand">540 <span class="metric-unit">L / day</span></h3>
+                <span class="metric-sub" id="kpiDemandSub">4 people @ 135 L/person</span>
+              </div>
+              <div class="metric-footer">
+                <span class="coverage-badge" id="kpiCoverageDays">12.6 Days Coverage</span>
+                <span class="metric-footer-text">100% self-sufficient</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Water & Cost Savings -->
+            <div class="metric-card card-savings">
+              <div class="metric-header">
+                <span class="metric-label">Estimated Water Savings</span>
+                <span class="metric-icon-badge"><i class="fa-solid fa-piggy-bank"></i></span>
+              </div>
+              <div class="metric-value-wrap">
+                <h3 class="metric-value" id="kpiFinancialSavings">₹ 2,430 <span class="metric-unit">saved</span></h3>
+                <span class="metric-sub" id="kpiVolumeOffsetSub">24.3 kL municipal water offset</span>
+              </div>
+              <div class="metric-footer">
+                <span class="trend-badge positive"><i class="fa-solid fa-earth-americas"></i> 18 kg CO₂ reduced</span>
+                <span class="metric-footer-text">Eco Impact</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Charts Row -->
+          <div class="dashboard-grid-charts">
+
+            <!-- Chart 1: Rainfall vs Harvest Timeline -->
+            <div class="dashboard-card chart-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-chart-column"></i> Rainfall vs. Harvest Potential</h3>
+                  <p>Historical & forecasted precipitation vs collectible rainwater yield</p>
+                </div>
+                <div class="chart-legend-custom">
+                  <span class="legend-item"><span class="legend-color-dot dot-rainfall"></span> Rain (mm)</span>
+                  <span class="legend-item"><span class="legend-color-dot dot-harvest"></span> Harvest (kL)</span>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="rainfallChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Water Balance & Consumption -->
+            <div class="dashboard-card chart-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-chart-pie"></i> Water Usage Breakdown</h3>
+                  <p>Daily demand allocation across key domestic needs</p>
+                </div>
+                <span class="badge badge-light" id="totalUsageBadge">540 L / Day</span>
+              </div>
+              <div class="chart-wrapper donut-wrapper">
+                <canvas id="waterBalanceChart"></canvas>
+              </div>
+              <div class="donut-stats-summary" id="donutStatsSummary">
+                <!-- Dynamically injected via script.js -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Smart Active Alerts Overview Table -->
+          <div class="dashboard-card">
+            <div class="card-header-flex">
+              <div class="card-title-group">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Active Smart Alerts & Notifications</h3>
+                <p>System monitoring alerts for low tank levels, overflow risks, and weather events</p>
+              </div>
+              <button class="btn btn-outline btn-sm" id="btnRefreshAlerts">
+                <i class="fa-solid fa-rotate"></i> Re-check Alerts
+              </button>
+            </div>
+
+            <div class="alerts-stream-grid" id="dashboardAlertsStream">
+              <!-- Dynamically populated via script.js -->
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 2: LIVE WEATHER & RAINFALL FORECAST                -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-weather">
+
+          <div class="weather-page-layout">
+
+            <!-- Weather Control Header Card -->
+            <div class="dashboard-card weather-hero-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-cloud-sun-rain"></i> Live Weather & Meteorological Rainfall Forecast</h3>
+                  <p>Real-time atmospheric telemetry via Open-Meteo API with automatic rainwater harvest modeling</p>
+                </div>
+                <div class="weather-mode-badges">
+                  <span class="badge badge-primary" id="weatherSourceBadge">📡 Live Open-Meteo API</span>
+                  <button class="btn btn-outline btn-sm" id="btnToggleWeatherDemo">Switch to Demo Mode</button>
+                </div>
+              </div>
+
+              <!-- City Selection and Custom Location Bar -->
+              <div class="city-selector-bar">
+                <div class="city-chips-group">
+                  <span class="city-label">Select City / Hub:</span>
+                  <button type="button" class="btn-city active" data-city="Bengaluru" data-lat="12.9716"
+                    data-lon="77.5946">Bengaluru</button>
+                  <button type="button" class="btn-city" data-city="Mumbai" data-lat="19.0760"
+                    data-lon="72.8777">Mumbai</button>
+                  <button type="button" class="btn-city" data-city="Delhi" data-lat="28.6139"
+                    data-lon="77.2090">Delhi</button>
+                  <button type="button" class="btn-city" data-city="Chennai" data-lat="13.0827"
+                    data-lon="80.2707">Chennai</button>
+                  <button type="button" class="btn-city" data-city="Hyderabad" data-lat="17.3850"
+                    data-lon="78.4867">Hyderabad</button>
+                  <button type="button" class="btn-city" data-city="London" data-lat="51.5074"
+                    data-lon="-0.1278">London</button>
+                  <button type="button" class="btn-city" data-city="New York" data-lat="40.7128" data-lon="-74.0060">New
+                    York</button>
+                </div>
+
+                <div class="custom-coord-input">
+                  <input type="text" id="weatherCustomCity" class="form-control"
+                    placeholder="Search City or enter Lat, Lon..." style="max-width: 250px;">
+                  <button class="btn btn-secondary btn-sm" id="btnFetchCustomWeather"><i
+                      class="fa-solid fa-magnifying-glass"></i> Fetch</button>
+                </div>
+              </div>
+
+              <!-- Live Weather KPI Display -->
+              <div class="live-weather-kpi-grid">
+
+                <div class="lw-box">
+                  <span class="lw-lbl">Current Temperature</span>
+                  <div class="lw-val-row">
+                    <i class="fa-solid fa-temperature-half lw-icon-warm"></i>
+                    <strong class="lw-val" id="weatherCurTemp">24.5 °C</strong>
+                  </div>
+                  <span class="lw-sub" id="weatherConditionText">Overcast & Showers</span>
+                </div>
+
+                <div class="lw-box">
+                  <span class="lw-lbl">24-Hour Rain Forecast</span>
+                  <div class="lw-val-row">
+                    <i class="fa-solid fa-cloud-showers-heavy lw-icon-rain"></i>
+                    <strong class="lw-val" id="weather24hRain">65.0 mm</strong>
+                  </div>
+                  <span class="lw-sub">Heavy Precipitation Expected</span>
+                </div>
+
+                <div class="lw-box">
+                  <span class="lw-lbl">Probability of Rain</span>
+                  <div class="lw-val-row">
+                    <i class="fa-solid fa-percent lw-icon-prob"></i>
+                    <strong class="lw-val" id="weatherRainProb">85 %</strong>
+                  </div>
+                  <span class="lw-sub">High Confidence Interval</span>
+                </div>
+
+                <div class="lw-box">
+                  <span class="lw-lbl">Wind & Humidity</span>
+                  <div class="lw-val-row">
+                    <i class="fa-solid fa-wind lw-icon-wind"></i>
+                    <strong class="lw-val" id="weatherWindHumidity">18 km/h | 82%</strong>
+                  </div>
+                  <span class="lw-sub">Southwest Monsoon Breeze</span>
+                </div>
+
+              </div>
+
+              <!-- Forecast-Driven Rain Harvest Prediction Card -->
+              <div class="forecast-harvest-action-card">
+                <div class="fha-info">
+                  <div class="fha-icon"><i class="fa-solid fa-droplet"></i></div>
+                  <div>
+                    <h4>Forecast-Estimated Rainwater Collection Potential</h4>
+                    <p>
+                      Using your active roof catchment (<span id="weatherActiveRoofArea">200 m²</span>) and the
+                      <span id="weatherForecastRainDepthText">65 mm</span> predicted rainfall, you can harvest:
+                    </p>
+                  </div>
+                </div>
+
+                <div class="fha-numbers">
+                  <strong class="fha-liters" id="weatherForecastLitersVal">11,700 Liters</strong>
+                  <span class="fha-cubic" id="weatherForecastCubicVal">≈ 11.70 m³</span>
+                </div>
+
+                <button class="btn btn-primary" id="btnApplyForecastRainToCalc">
+                  <i class="fa-solid fa-bolt"></i> Transfer Forecast to Calculator
+                </button>
+              </div>
+
+            </div>
+
+            <!-- 7-Day Forecast Grid & Chart -->
+            <div class="dashboard-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-calendar-days"></i> 7-Day Precipitation & Collection Forecast</h3>
+                  <p>Daily forecasted rain depth and projected harvest potential</p>
+                </div>
+              </div>
+
+              <div class="seven-day-forecast-grid" id="sevenDayForecastGrid">
+                <!-- Dynamically populated via script.js -->
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 3: ROOFTOP CALCULATOR (SINGLE & MULTI-ROOF)        -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-calculator">
+
+          <div class="calculator-layout-grid">
+
+            <!-- Left: Inputs Form & Multi-Rooftop Manager -->
+            <div class="dashboard-card calc-form-card">
+
+              <!-- Tab Mode Switcher: Quick Single Roof vs Multi-Rooftops -->
+              <div class="calc-mode-switch">
+                <button type="button" class="mode-tab-btn active" id="tabSingleRoofMode">
+                  <i class="fa-solid fa-house"></i> Single Roof Catchment
+                </button>
+                <button type="button" class="mode-tab-btn" id="tabMultiRoofMode">
+                  <i class="fa-solid fa-layer-group"></i> Multiple Rooftop System
+                  <span class="badge badge-primary" id="multiRoofCountBadge">2 Roofs</span>
+                </button>
+              </div>
+
+              <!-- SINGLE ROOF MODE -->
+              <div id="singleRoofSection">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-calculator"></i> Rainwater Harvest Calculator</h3>
+                    <p>Formula: <strong>Collected Water (L) = Rainfall (mm) × Roof Area (m²) × Runoff
+                        Coefficient</strong></p>
+                  </div>
+                  <div class="formula-pill">
+                    <span>1 mm on 1 m² = 1 Liter</span>
+                  </div>
+                </div>
+
+                <!-- Quick Storm Presets -->
+                <div class="calc-presets-bar">
+                  <span class="preset-label">Quick Rainfall Scenarios:</span>
+                  <div class="preset-buttons">
+                    <button type="button" class="btn-preset" data-rain="15">Light Rain (15mm)</button>
+                    <button type="button" class="btn-preset active" data-rain="65">Monsoon Storm (65mm)</button>
+                    <button type="button" class="btn-preset" data-rain="120">Heavy Cloudburst (120mm)</button>
+                    <button type="button" class="btn-preset" data-rain="950">Annual Total (950mm)</button>
+                  </div>
+                </div>
+
+                <form id="calculatorForm" class="calc-form">
+                  <!-- Input 1: Rainfall (mm) -->
+                  <div class="form-group">
+                    <div class="form-label-wrap">
+                      <label for="calcRainfall"><i class="fa-solid fa-cloud-showers-heavy"></i> Rainfall Depth
+                        (R)</label>
+                      <span class="form-input-display"><span id="calcRainfallDisplay">65</span> mm</span>
+                    </div>
+                    <div class="range-with-number">
+                      <input type="range" id="calcRainfallRange" min="1" max="500" value="65" step="1"
+                        class="slider-input">
+                      <input type="number" id="calcRainfall" min="0" max="5000" value="65"
+                        class="form-control number-box">
+                    </div>
+                    <small class="form-help-text">Rainfall measurement during the period (millimeter depth)</small>
+                  </div>
+
+                  <!-- Input 2: Roof Area (m2) -->
+                  <div class="form-group">
+                    <div class="form-label-wrap">
+                      <label for="calcRoofArea"><i class="fa-solid fa-vector-square"></i> Catchment / Roof Area
+                        (A)</label>
+                      <span class="form-input-display"><span id="calcRoofAreaDisplay">200</span> m² (<span
+                          id="calcRoofSqft">2,152</span> sq.ft)</span>
+                    </div>
+                    <div class="range-with-number">
+                      <input type="range" id="calcRoofAreaRange" min="20" max="2000" value="200" step="10"
+                        class="slider-input">
+                      <input type="number" id="calcRoofArea" min="1" max="100000" value="200"
+                        class="form-control number-box">
+                    </div>
+                    <small class="form-help-text">Total horizontal projected surface area capturing
+                      precipitation</small>
+                  </div>
+
+                  <!-- Input 3: Roof Surface Type (Runoff Coefficient C) -->
+                  <div class="form-group">
+                    <div class="form-label-wrap">
+                      <label><i class="fa-solid fa-layer-group"></i> Roof Type & Runoff Coefficient (C)</label>
+                      <span class="coeff-badge" id="coeffValueBadge">C = 0.90</span>
+                    </div>
+
+                    <div class="roof-selector-grid" id="roofSelectorGrid">
+                      <label class="roof-card selected" data-coeff="0.90" data-name="Corrugated Metal / GI Sheet">
+                        <input type="radio" name="roofType" value="0.90" checked>
+                        <div class="roof-icon"><i class="fa-solid fa-sheet-plastic"></i></div>
+                        <div class="roof-info">
+                          <strong>Metal / GI Sheet</strong>
+                          <span class="roof-desc">Smooth, lowest absorption</span>
+                        </div>
+                        <span class="c-val">C = 0.90</span>
+                      </label>
+
+                      <label class="roof-card" data-coeff="0.80" data-name="Reinforced Concrete Slab / Terrace">
+                        <input type="radio" name="roofType" value="0.80">
+                        <div class="roof-icon"><i class="fa-solid fa-cubes"></i></div>
+                        <div class="roof-info">
+                          <strong>Concrete Terrace</strong>
+                          <span class="roof-desc">Standard flat roof surface</span>
+                        </div>
+                        <span class="c-val">C = 0.80</span>
+                      </label>
+
+                      <label class="roof-card" data-coeff="0.85" data-name="Clay / Terracotta Tiled Roof">
+                        <input type="radio" name="roofType" value="0.85">
+                        <div class="roof-icon"><i class="fa-solid fa-house"></i></div>
+                        <div class="roof-info">
+                          <strong>Clay / Mangalore Tiles</strong>
+                          <span class="roof-desc">Pitched traditional slope</span>
+                        </div>
+                        <span class="c-val">C = 0.85</span>
+                      </label>
+
+                      <label class="roof-card" data-coeff="0.50" data-name="Green / Vegetative Living Roof">
+                        <input type="radio" name="roofType" value="0.50">
+                        <div class="roof-icon"><i class="fa-solid fa-seedling"></i></div>
+                        <div class="roof-info">
+                          <strong>Green / Eco Roof</strong>
+                          <span class="roof-desc">High retention & bio-filter</span>
+                        </div>
+                        <span class="c-val">C = 0.50</span>
+                      </label>
+
+                      <label class="roof-card" data-coeff="0.70" data-name="Asphalt / Tar Shingle Roof">
+                        <input type="radio" name="roofType" value="0.70">
+                        <div class="roof-icon"><i class="fa-solid fa-road"></i></div>
+                        <div class="roof-info">
+                          <strong>Asphalt / Tar Felt</strong>
+                          <span class="roof-desc">Moderate friction loss</span>
+                        </div>
+                        <span class="c-val">C = 0.70</span>
+                      </label>
+
+                      <label class="roof-card" data-coeff="0.65" data-name="Interlocking Paved Ground">
+                        <input type="radio" name="roofType" value="0.65">
+                        <div class="roof-icon"><i class="fa-solid fa-border-all"></i></div>
+                        <div class="roof-info">
+                          <strong>Paved Ground / Yard</strong>
+                          <span class="roof-desc">Runoff with joint seepage</span>
+                        </div>
+                        <span class="c-val">C = 0.65</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Input 4: First Flush Deduction Checkbox -->
+                  <div class="form-group toggle-group">
+                    <div class="toggle-wrap">
+                      <label class="switch">
+                        <input type="checkbox" id="calcFirstFlushToggle" checked>
+                        <span class="slider round"></span>
+                      </label>
+                      <div class="toggle-text">
+                        <strong>Include First-Flush Filtration Deduction (1.5 mm)</strong>
+                        <small>Discards the initial contaminated wash to safeguard storage water quality</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Action Button -->
+                  <div class="calc-actions">
+                    <button type="button" class="btn btn-primary btn-block btn-lg" id="btnCalculateSave">
+                      <i class="fa-solid fa-arrow-down-to-bracket"></i> Calculate & Apply to Tank Storage
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- MULTI-ROOFTOP MODE -->
+              <div id="multiRoofSection" style="display: none;">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-layer-group"></i> Multiple Rooftop Calculator</h3>
+                    <p>Add distinct catchment surfaces (main villa, garage, shed, terrace) with separate coefficients
+                    </p>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" id="btnAddRooftop">
+                    <i class="fa-solid fa-plus"></i> Add Rooftop
+                  </button>
+                </div>
+
+                <!-- Global Rainfall for Multi-Roof -->
+                <div class="multi-roof-rainfall-bar">
+                  <label for="multiRoofGlobalRain"><i class="fa-solid fa-cloud-rain"></i> Event Rainfall for All
+                    Roofs:</label>
+                  <div class="input-with-button">
+                    <input type="number" id="multiRoofGlobalRain" class="form-control" value="65" min="1" max="1000"
+                      style="max-width: 120px;">
+                    <span class="unit-text">mm</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="btnSyncWeatherRain">Use Forecast
+                      Rain</button>
+                  </div>
+                </div>
+
+                <!-- Dynamic Rooftops List -->
+                <div class="rooftops-list-container" id="rooftopsListContainer">
+                  <!-- Dynamically populated via script.js -->
+                </div>
+
+                <!-- Multi-Roof Action -->
+                <div class="calc-actions">
+                  <button type="button" class="btn btn-primary btn-block btn-lg" id="btnApplyMultiRoofToTank">
+                    <i class="fa-solid fa-cubes-stacked"></i> Apply Combined Multi-Roof Harvest to Tank
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: Results Card & Hydro Dynamics Breakdown -->
+            <div class="calculator-results-pane">
+
+              <!-- Big Output Hero Card -->
+              <div class="dashboard-card calc-result-hero">
+                <span class="hero-sub" id="calcResultHeroLabel">Total Harvestable Rainwater</span>
+                <div class="hero-val-container">
+                  <h2 class="hero-val" id="calcResultLiters">11,700</h2>
+                  <span class="hero-unit">LITERS</span>
+                </div>
+                <div class="hero-equivalent">
+                  <span>Equates to <strong id="calcResultCubic">11.70 m³</strong> &approx; <strong
+                      id="calcResultBottles">23,400</strong> standard drinking bottles</span>
+                </div>
+
+                <!-- Hydrological Breakdown Flow -->
+                <div class="hydro-breakdown">
+                  <div class="hydro-step">
+                    <span class="step-label">Gross Precip</span>
+                    <strong class="step-val" id="calcGrossPrecip">13,000 L</strong>
+                    <span class="step-sub">R × A (100%)</span>
+                  </div>
+                  <div class="hydro-arrow"><i class="fa-solid fa-minus"></i></div>
+                  <div class="hydro-step loss-step">
+                    <span class="step-label">Runoff Losses</span>
+                    <strong class="step-val" id="calcRunoffLoss">1,300 L</strong>
+                    <span class="step-sub">Absorption & Splash</span>
+                  </div>
+                  <div class="hydro-arrow"><i class="fa-solid fa-minus"></i></div>
+                  <div class="hydro-step flush-step">
+                    <span class="step-label">First Flush</span>
+                    <strong class="step-val" id="calcFlushDiverted">300 L</strong>
+                    <span class="step-sub">Debris Cleaning</span>
+                  </div>
+                  <div class="hydro-arrow"><i class="fa-solid fa-equals"></i></div>
+                  <div class="hydro-step net-step">
+                    <span class="step-label">Net Stored</span>
+                    <strong class="step-val" id="calcNetHarvested">11,400 L</strong>
+                    <span class="step-sub">Net Yield</span>
+                  </div>
+                </div>
+
+                <!-- Efficiency Gauge Bar -->
+                <div class="efficiency-gauge-wrap">
+                  <div class="gauge-header">
+                    <span>Catchment Harvesting Efficiency</span>
+                    <strong id="calcEfficiencyPct">87.7%</strong>
+                  </div>
+                  <div class="gauge-track">
+                    <div class="gauge-fill" id="calcEfficiencyFill" style="width: 87.7%;"></div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Quick Tank Impact Mini-Card -->
+              <div class="dashboard-card tank-impact-preview">
+                <h4><i class="fa-solid fa-faucet"></i> Tank Storage Projection</h4>
+                <p>If this storm volume is directed into your current tank:</p>
+
+                <div class="impact-metrics-row">
+                  <div class="impact-col">
+                    <span class="impact-label">Current Stored</span>
+                    <strong id="impactCurrentVal">6,800 L</strong>
+                  </div>
+                  <div class="impact-col">
+                    <span class="impact-label">+ Harvested</span>
+                    <strong class="impact-add" id="impactHarvestVal">+11,400 L</strong>
+                  </div>
+                  <div class="impact-col">
+                    <span class="impact-label">Tank Max Cap</span>
+                    <strong id="impactTankCap">10,000 L</strong>
+                  </div>
+                  <div class="impact-col">
+                    <span class="impact-label">Predicted State</span>
+                    <strong class="impact-overflow" id="impactStatusBadge">Overflow (+8,200 L)</strong>
+                  </div>
+                </div>
+
+                <div class="impact-callout" id="impactCalloutText">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span>Warning: This storm will exceed your tank capacity by <strong>8,200 L</strong>. Make sure
+                    overflow percolation is clear to recharge groundwater.</span>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 4: SMART TANK MONITORING & IOT TELEMETRY           -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-tank">
+
+          <div class="tank-view-grid">
+
+            <!-- Left: Graphical Tank Simulation & Visual Level Indicator -->
+            <div class="dashboard-card tank-visual-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-cubes-stacked"></i> Smart Water Reservoir & Visual Level Gauge</h3>
+                  <p>Real-time physical reservoir telemetry and level tracking</p>
+                </div>
+                <div class="tank-badge-live" id="tankStateBadge">
+                  <span class="badge-dot pulse"></span> <span id="tankStateText">Optimal Level</span>
+                </div>
+              </div>
+
+              <!-- Interactive Tank Graphic Container -->
+              <div class="tank-graphic-stage">
+
+                <div class="tank-container-shell">
+                  <!-- Measurement Ticks -->
+                  <div class="tank-ticks">
+                    <span>100% (Full)</span>
+                    <span>75%</span>
+                    <span>50%</span>
+                    <span>25%</span>
+                    <span>0% (Empty)</span>
+                  </div>
+
+                  <!-- The Physical Water Vessel -->
+                  <div class="tank-body">
+                    <div class="tank-inflow-pipe" id="tankInflowPipe">
+                      <div class="water-stream" id="waterStream"></div>
+                    </div>
+
+                    <!-- Water Wave Fill -->
+                    <div class="tank-water-mass" id="tankWaterMass" style="height: 68%;">
+                      <div class="water-wave wave1"></div>
+                      <div class="water-wave wave2"></div>
+                      <div class="water-bubbles">
+                        <span></span><span></span><span></span><span></span><span></span>
+                      </div>
+                      <div class="water-center-label">
+                        <strong id="tankGraphicLiters">6,800 L</strong>
+                        <span id="tankGraphicPct">68% Capacity</span>
+                      </div>
+                    </div>
+
+                    <!-- Overflow Pipe -->
+                    <div class="tank-overflow-pipe" id="tankOverflowPipe">
+                      <span class="pipe-label">Overflow Outflow</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Tank Status Quick Bar -->
+              <div class="tank-status-metrics">
+                <div class="ts-box">
+                  <span class="ts-lbl">Water Volume</span>
+                  <strong class="ts-val" id="tankValStored">6,800 L</strong>
+                </div>
+                <div class="ts-box">
+                  <span class="ts-lbl">Available Space</span>
+                  <strong class="ts-val" id="tankValHeadroom">3,200 L</strong>
+                </div>
+                <div class="ts-box">
+                  <span class="ts-lbl">Fill Percentage</span>
+                  <strong class="ts-val" id="tankValPct">68.0%</strong>
+                </div>
+                <div class="ts-box">
+                  <span class="ts-lbl">Autonomy Days</span>
+                  <strong class="ts-val" id="tankValDays">12.6 Days</strong>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: Simulated IoT Sensor Telemetry & Tank Controls -->
+            <div class="tank-controls-pane">
+
+              <!-- Simulated Sensor Stream Card -->
+              <div class="dashboard-card sensor-telemetry-card">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-satellite-dish text-primary"></i> Smart IoT Telemetry Stream</h3>
+                    <p>Live sensor stream &bull; <span class="badge badge-light">Simulated IoT Telemetry</span></p>
+                  </div>
+                  <button class="btn btn-outline btn-sm" id="btnToggleSensorStream">
+                    <i class="fa-solid fa-pause" id="sensorStreamIcon"></i> <span id="sensorStreamText">Live</span>
+                  </button>
+                </div>
+
+                <div class="sensor-readings-grid">
+                  <div class="sensor-metric-box">
+                    <span class="sm-lbl">Ultrasonic Depth</span>
+                    <strong class="sm-val" id="sensorDepthVal">1.84 m</strong>
+                    <span class="sm-sub" id="sensorLevelJitter">Level: 68.0%</span>
+                  </div>
+
+                  <div class="sensor-metric-box">
+                    <span class="sm-lbl">Water Temperature</span>
+                    <strong class="sm-val" id="sensorTempVal">21.8 °C</strong>
+                    <span class="sm-sub">Optimal Storage</span>
+                  </div>
+
+                  <div class="sensor-metric-box">
+                    <span class="sm-lbl">Water Turbidity</span>
+                    <strong class="sm-val text-green" id="sensorTurbidityVal">1.2 NTU</strong>
+                    <span class="sm-sub">Potable Clarity</span>
+                  </div>
+
+                  <div class="sensor-metric-box">
+                    <span class="sm-lbl">Inflow / Outflow</span>
+                    <strong class="sm-val" id="sensorFlowVal">0.0 / 0.38</strong>
+                    <span class="sm-sub">Liters / min</span>
+                  </div>
+                </div>
+
+                <div class="sensor-footer-status">
+                  <span class="sensor-pulse-dot"></span>
+                  <span id="sensorSyncTimestamp">Last packet: Just now &bull; Simulated JSN-SR04T Sensor</span>
+                </div>
+              </div>
+
+              <!-- Tank Configuration Card -->
+              <div class="dashboard-card">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-sliders"></i> Tank Sizing & Thresholds</h3>
+                    <p>Modify storage specifications and available capacity</p>
+                  </div>
+                </div>
+
+                <div class="tank-form">
+                  <div class="form-group">
+                    <label for="tankCapacityInput"><i class="fa-solid fa-boxes-stacked"></i> Total Tank Capacity
+                      (Liters)</label>
+                    <div class="input-with-button">
+                      <input type="number" id="tankCapacityInput" class="form-control" value="10000" min="500"
+                        max="500000" step="500">
+                      <button class="btn btn-outline" id="btnUpdateCapacity">Update</button>
+                    </div>
+                    <div class="quick-cap-chips">
+                      <button type="button" class="btn-chip" data-cap="2000">2,000 L</button>
+                      <button type="button" class="btn-chip" data-cap="5000">5,000 L</button>
+                      <button type="button" class="btn-chip active" data-cap="10000">10,000 L</button>
+                      <button type="button" class="btn-chip" data-cap="25000">25,000 L</button>
+                      <button type="button" class="btn-chip" data-cap="50000">50,000 L</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="tankCurrentInput"><i class="fa-solid fa-water"></i> Manual Current Water Level
+                      (Liters)</label>
+                    <div class="input-with-button">
+                      <input type="number" id="tankCurrentInput" class="form-control" value="6800" min="0" max="500000"
+                        step="100">
+                      <button class="btn btn-primary" id="btnSetCurrentLevel">Set Level</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Interactive Water Operations Bar -->
+              <div class="dashboard-card">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-bolt-lightning"></i> Live Water Operations</h3>
+                    <p>Simulate storm inflows, daily drain cycles, or groundwater diversion</p>
+                  </div>
+                </div>
+
+                <div class="tank-ops-buttons">
+                  <button class="btn btn-secondary" id="btnSimulateRainInflow">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Add Calculated Storm (+11.4k L)
+                  </button>
+                  <button class="btn btn-outline" id="btnSimulateDailyUse">
+                    <i class="fa-solid fa-shower"></i> Consume 1-Day Water (-540 L)
+                  </button>
+                  <button class="btn btn-outline" id="btnFillTankMax">
+                    <i class="fa-solid fa-arrows-up-to-line"></i> Top Up To 100%
+                  </button>
+                  <button class="btn btn-outline btn-danger-soft" id="btnDrainTank">
+                    <i class="fa-solid fa-trash-can"></i> Drain / Empty Tank
+                  </button>
+                </div>
+
+                <!-- Overflow & Low Water Warning Banner -->
+                <div class="tank-overflow-card" id="tankOverflowAlert">
+                  <div class="alert-icon-wrap">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                  </div>
+                  <div class="alert-info-wrap">
+                    <strong id="tankOverflowTitle">No Overflow Risk Currently</strong>
+                    <p id="tankOverflowDesc">Tank has 3,200 L of available space before reaching spill level.</p>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 5: WATER DEMAND & COVERAGE                         -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-demand">
+
+          <div class="demand-view-grid">
+
+            <!-- Left: Demand Form & Appliance Breakdown -->
+            <div class="dashboard-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-users-between-lines"></i> Household & Community Water Demand</h3>
+                  <p>Compute daily, weekly, monthly, and seasonal urban water consumption</p>
+                </div>
+                <div class="badge badge-primary">Standard IS 1172 Benchmark</div>
+              </div>
+
+              <!-- People Count Stepper -->
+              <div class="demand-stepper-box">
+                <div class="stepper-label">
+                  <strong><i class="fa-solid fa-people-roof"></i> Number of Occupants / Residents:</strong>
+                  <span class="stepper-count" id="demandPeopleCountDisplay">4 People</span>
+                </div>
+                <div class="stepper-controls">
+                  <button type="button" class="btn-step" id="btnDecreasePeople"><i
+                      class="fa-solid fa-minus"></i></button>
+                  <input type="range" id="demandPeopleRange" min="1" max="50" value="4" class="slider-input">
+                  <button type="button" class="btn-step" id="btnIncreasePeople"><i
+                      class="fa-solid fa-plus"></i></button>
+                </div>
+              </div>
+
+              <!-- Per Person Consumption Preset Buttons -->
+              <div class="form-group">
+                <label><i class="fa-solid fa-glass-water-droplet"></i> Daily Consumption Rate per Person:</label>
+                <div class="consumption-presets">
+                  <button type="button" class="btn-rate-preset" data-rate="90">
+                    <strong>90 L / day</strong>
+                    <span>Eco / Strict Saving</span>
+                  </button>
+                  <button type="button" class="btn-rate-preset active" data-rate="135">
+                    <strong>135 L / day</strong>
+                    <span>Standard Urban (IS:1172)</span>
+                  </button>
+                  <button type="button" class="btn-rate-preset" data-rate="180">
+                    <strong>180 L / day</strong>
+                    <span>Comfort / High Garden</span>
+                  </button>
+                  <button type="button" class="btn-rate-preset" data-rate="220">
+                    <strong>220 L / day</strong>
+                    <span>Luxury Residence</span>
+                  </button>
+                </div>
+                <div class="custom-rate-input-wrap">
+                  <label for="demandCustomPerPerson">Or specify custom rate (L/person/day):</label>
+                  <input type="number" id="demandCustomPerPerson" class="form-control number-box" value="135" min="20"
+                    max="1000">
+                </div>
+              </div>
+
+              <!-- Sub-Category Activity Sliders -->
+              <div class="activity-breakdown-section">
+                <h4><i class="fa-solid fa-chart-simple"></i> Domestic Consumption Share (Editable):</h4>
+
+                <div class="activity-row">
+                  <div class="act-name"><i class="fa-solid fa-toilet"></i> Toilet Flushing (30%)</div>
+                  <div class="act-vol" id="volFlushing">162 L/day</div>
+                </div>
+
+                <div class="activity-row">
+                  <div class="act-name"><i class="fa-solid fa-bath"></i> Bathing & Shower (35%)</div>
+                  <div class="act-vol" id="volBathing">189 L/day</div>
+                </div>
+
+                <div class="activity-row">
+                  <div class="act-name"><i class="fa-solid fa-shirt"></i> Clothes Washing (15%)</div>
+                  <div class="act-vol" id="volWashing">81 L/day</div>
+                </div>
+
+                <div class="activity-row">
+                  <div class="act-name"><i class="fa-solid fa-faucet"></i> Kitchen & Drinking (12%)</div>
+                  <div class="act-vol" id="volKitchen">65 L/day</div>
+                </div>
+
+                <div class="activity-row">
+                  <div class="act-name"><i class="fa-solid fa-seedling"></i> Garden & Cleaning (8%)</div>
+                  <div class="act-vol" id="volGarden">43 L/day</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: Coverage Analysis & Autonomy Gauge -->
+            <div class="demand-results-pane">
+
+              <!-- Coverage Big Card -->
+              <div class="dashboard-card demand-coverage-card">
+                <span class="coverage-hero-subtitle">Water Autonomy Duration</span>
+                <div class="coverage-hero-val-wrap">
+                  <h2 class="coverage-hero-val" id="demandCoverageDaysVal">12.6</h2>
+                  <span class="coverage-hero-unit">DAYS</span>
+                </div>
+                <p class="coverage-hero-explainer">
+                  With your current <strong>6,800 Liters</strong> in storage and a daily demand of <strong>540
+                    Liters/day</strong>, your building can operate off-grid without municipal supply.
+                </p>
+
+                <div class="autonomy-milestones">
+                  <div class="milestone-box">
+                    <span class="m-val" id="demandMonthlyTotal">16.2 kL</span>
+                    <span class="m-lbl">Monthly Demand</span>
+                  </div>
+                  <div class="milestone-box">
+                    <span class="m-val" id="demandAnnualTotal">197.1 kL</span>
+                    <span class="m-lbl">Annual Demand</span>
+                  </div>
+                  <div class="milestone-box">
+                    <span class="m-val text-green" id="demandRainCoveragePct">12.3%</span>
+                    <span class="m-lbl">Annually Rain-Covered</span>
+                  </div>
+                </div>
+
+                <!-- Water Security Level Badge -->
+                <div class="water-security-status" id="waterSecurityStatus">
+                  <div class="sec-icon"><i class="fa-solid fa-shield-heart"></i></div>
+                  <div class="sec-text">
+                    <strong>Water Security Status: High Resilience</strong>
+                    <p>Current reserves cover essential consumption past the standard 7-day emergency threshold.</p>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Conservation Strategy Comparison -->
+              <div class="dashboard-card">
+                <div class="card-header-flex">
+                  <div class="card-title-group">
+                    <h3><i class="fa-solid fa-lightbulb"></i> Efficiency Upgrade Scenarios</h3>
+                    <p>See how low-flow fixtures boost your water coverage</p>
+                  </div>
+                </div>
+
+                <div class="upgrade-scenarios-table">
+                  <div class="scenario-item">
+                    <div class="scenario-details">
+                      <strong>Current Standard Fixtures</strong>
+                      <span>540 L/day consumption</span>
+                    </div>
+                    <div class="scenario-coverage">
+                      <strong>12.6 Days</strong>
+                    </div>
+                  </div>
+
+                  <div class="scenario-item highlight">
+                    <div class="scenario-details">
+                      <strong>Aerators + Dual-Flush Toilets (-25%)</strong>
+                      <span>405 L/day consumption</span>
+                    </div>
+                    <div class="scenario-coverage text-green">
+                      <strong>16.8 Days (+4.2 days)</strong>
+                    </div>
+                  </div>
+
+                  <div class="scenario-item">
+                    <div class="scenario-details">
+                      <strong>Greywater Recycling for Toilets (-45%)</strong>
+                      <span>297 L/day consumption</span>
+                    </div>
+                    <div class="scenario-coverage text-green">
+                      <strong>22.9 Days (+10.3 days)</strong>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 6: WATER CONSUMPTION ANALYTICS (DAILY/WEEKLY/MONTHLY)-->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-analytics">
+
+          <div class="analytics-page-layout">
+
+            <!-- Summary Stats Cards -->
+            <div class="metrics-grid">
+
+              <div class="metric-card card-harvest">
+                <div class="metric-header">
+                  <span class="metric-label">Total Rain Collected</span>
+                  <span class="metric-icon-badge"><i class="fa-solid fa-cloud-arrow-down"></i></span>
+                </div>
+                <div class="metric-value-wrap">
+                  <h3 class="metric-value" id="analyticsTotalHarvested">48.6 <span class="metric-unit">kL</span></h3>
+                  <span class="metric-sub">Cumulative season harvest</span>
+                </div>
+                <div class="metric-footer">
+                  <span class="trend-badge positive"><i class="fa-solid fa-check"></i> 100% Utilized</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-demand">
+                <div class="metric-header">
+                  <span class="metric-label">Total Water Consumed</span>
+                  <span class="metric-icon-badge"><i class="fa-solid fa-faucet"></i></span>
+                </div>
+                <div class="metric-value-wrap">
+                  <h3 class="metric-value" id="analyticsTotalConsumed">41.8 <span class="metric-unit">kL</span></h3>
+                  <span class="metric-sub">Across all domestic fixtures</span>
+                </div>
+                <div class="metric-footer">
+                  <span class="metric-footer-text">Avg: 540 L / day</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-storage">
+                <div class="metric-header">
+                  <span class="metric-label">Net Water Remaining</span>
+                  <span class="metric-icon-badge"><i class="fa-solid fa-cubes-stacked"></i></span>
+                </div>
+                <div class="metric-value-wrap">
+                  <h3 class="metric-value" id="analyticsNetRemaining">6.8 <span class="metric-unit">kL</span></h3>
+                  <span class="metric-sub">Available active reserve</span>
+                </div>
+                <div class="metric-footer">
+                  <span class="status-indicator good">68% Capacity Buffer</span>
+                </div>
+              </div>
+
+              <div class="metric-card card-savings">
+                <div class="metric-header">
+                  <span class="metric-label">Net Financial Savings</span>
+                  <span class="metric-icon-badge"><i class="fa-solid fa-wallet"></i></span>
+                </div>
+                <div class="metric-value-wrap">
+                  <h3 class="metric-value" id="analyticsCostSavings">₹ 4,374 <span class="metric-unit">saved</span></h3>
+                  <span class="metric-sub">Vs. ₹90 / kL municipal tanker</span>
+                </div>
+                <div class="metric-footer">
+                  <span class="trend-badge positive"><i class="fa-solid fa-leaf"></i> 35 kg CO₂ Offset</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Timeframe Dynamic Chart Card -->
+            <div class="dashboard-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-chart-line"></i> Consumption vs. Inflow Balance Analytics</h3>
+                  <p>Track water collection, demand cycles, and net storage stability over time</p>
+                </div>
+
+                <!-- Timeframe Selector Tabs -->
+                <div class="timeframe-buttons">
+                  <button type="button" class="btn-timeframe active" data-timeframe="daily">Daily (7 Days)</button>
+                  <button type="button" class="btn-timeframe" data-timeframe="weekly">Weekly (4 Weeks)</button>
+                  <button type="button" class="btn-timeframe" data-timeframe="monthly">Monthly (12 Months)</button>
+                </div>
+              </div>
+
+              <div class="chart-wrapper" style="min-height: 340px;">
+                <canvas id="consumptionAnalyticsChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Historical Log Table -->
+            <div class="dashboard-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3><i class="fa-solid fa-clock-rotate-left"></i> Water Telemetry Log Summary</h3>
+                  <p>Detailed log of daily harvested, consumed, and remaining water balance</p>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btnDownloadLogCSV">
+                  <i class="fa-solid fa-download"></i> Download CSV Log
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="report-table" id="analyticsLogTable">
+                  <thead>
+                    <tr
+                      style="text-align: left; font-weight: 700; color: var(--slate-600); border-bottom: 2px solid var(--slate-200);">
+                      <th style="padding: 0.6rem;">Timeline Period</th>
+                      <th style="padding: 0.6rem;">Rainfall (mm)</th>
+                      <th style="padding: 0.6rem;">Harvested (L)</th>
+                      <th style="padding: 0.6rem;">Consumed (L)</th>
+                      <th style="padding: 0.6rem;">Net Balance (L)</th>
+                      <th style="padding: 0.6rem; text-align: right;">Savings (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analyticsLogTableBody">
+                    <!-- Dynamically populated via script.js -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 7: AI WATER ADVISOR (INTERACTIVE CHATBOT)          -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-advisor">
+
+          <div class="advisor-layout-grid">
+
+            <!-- Left: Advisor Chat & Interactive Chatbot -->
+            <div class="dashboard-card advisor-chat-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <h3>
+                    <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
+                    AI Water Conservation & Hydrology Advisor
+                  </h3>
+                  <p>Context-aware chatbot with live website telemetry integration</p>
+                </div>
+                <div class="ai-mode-pill">
+                  <i class="fa-solid fa-microchip"></i> <span id="aiEngineLabel">Heuristic Rules Engine</span>
+                </div>
+              </div>
+
+              <!-- Quick Question Chips -->
+              <div class="ai-quick-prompts">
+                <span class="quick-prompt-title">Quick Inquiries:</span>
+                <button type="button" class="btn-prompt" data-query="How can I prevent tank overflow during monsoons?">
+                  🌧️ Prevent Monsoon Overflow?
+                </button>
+                <button type="button" class="btn-prompt"
+                  data-query="Explain my rainwater calculation formula and runoff losses.">
+                  📐 Explain My Calculation
+                </button>
+                <button type="button" class="btn-prompt" data-query="How many days will my current stored water last?">
+                  ⏳ Water Coverage Duration?
+                </button>
+                <button type="button" class="btn-prompt"
+                  data-query="What low-cost fixtures save the most domestic water?">
+                  💡 High-ROI Fixtures
+                </button>
+                <button type="button" class="btn-prompt"
+                  data-query="How to calculate collection from multiple rooftops?">
+                  🏢 Multi-Rooftop Guide
+                </button>
+              </div>
+
+              <!-- Advisor Output Dialogue Box -->
+              <div class="advisor-response-box" id="advisorOutput">
+                <div class="advisor-loading-spinner" id="advisorLoading" style="display: none;">
+                  <div class="spinner"></div>
+                  <span>Analyzing hydrological parameters & live catchment telemetry...</span>
+                </div>
+                <div class="advisor-stream" id="advisorStream">
+                  <!-- Dynamically populated by script.js -->
+                </div>
+              </div>
+
+              <!-- Custom Question Input Bar -->
+              <div class="advisor-input-bar">
+                <input type="text" id="advisorUserInput" class="form-control"
+                  placeholder="Ask AI Advisor about water savings, multiple roofs, overflow prevention, or storage...">
+                <button class="btn btn-primary" id="btnAskAdvisor">
+                  <i class="fa-solid fa-paper-plane"></i> <span>Ask</span>
+                </button>
+                <button class="btn btn-outline btn-icon" id="btnClearChatHistory" title="Clear Chat History">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+
+              <!-- Backend Proxy API Security Notice & Optional Integration -->
+              <details class="api-key-accordion">
+                <summary><i class="fa-solid fa-shield-halved"></i> AI API Configuration & Security Notice</summary>
+                <div class="api-key-drawer">
+                  <div class="security-callout-box">
+                    <i class="fa-solid fa-lock text-primary"></i>
+                    <div>
+                      <strong>Security Standard: No Frontend Key Exposure</strong>
+                      <p>
+                        In accordance with enterprise security practices, production API keys must never be hardcoded
+                        into frontend scripts.
+                        RainSmart uses its powerful, mathematically verified <strong>Rule-Based AI Engine</strong> by
+                        default (100% free, private, and instant).
+                        To connect an external LLM, specify your secure backend proxy endpoint below:
+                      </p>
+                    </div>
+                  </div>
+                  <div class="api-key-input-row" style="margin-top: 0.75rem;">
+                    <input type="text" id="aiBackendEndpointInput" class="form-control"
+                      placeholder="Optional Backend Proxy URL (e.g. http://localhost:5000/api/chat)">
+                    <button class="btn btn-secondary" id="btnSaveBackendEndpoint">Save Endpoint</button>
+                    <button class="btn btn-outline" id="btnClearBackendEndpoint">Reset</button>
+                  </div>
+                  <span class="api-key-status" id="apiKeyStatusText">Using built-in Expert Rule-Based AI Engine</span>
+                </div>
+              </details>
+
+            </div>
+
+            <!-- Right: Dynamic Smart Recommendations Sidebar -->
+            <div class="advisor-side-recommendations">
+
+              <!-- Card: Shortage Prevention -->
+              <div class="dashboard-card advice-card">
+                <div class="advice-header">
+                  <div class="advice-icon-wrap red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                  <div class="advice-title">
+                    <h4>Shortage Prevention</h4>
+                    <span>Emergency mitigation</span>
+                  </div>
+                </div>
+                <div class="advice-body" id="adviceShortageBody">
+                  <!-- Dynamically updated -->
+                </div>
+              </div>
+
+              <!-- Card: Overflow & Recharge Strategy -->
+              <div class="dashboard-card advice-card">
+                <div class="advice-header">
+                  <div class="advice-icon-wrap blue"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+                  <div class="advice-title">
+                    <h4>Catchment Optimization</h4>
+                    <span>Maximize harvest yield</span>
+                  </div>
+                </div>
+                <div class="advice-body" id="adviceHarvestBody">
+                  <!-- Dynamically updated -->
+                </div>
+              </div>
+
+              <!-- Card: Urban Water Conservation -->
+              <div class="dashboard-card advice-card">
+                <div class="advice-header">
+                  <div class="advice-icon-wrap green"><i class="fa-solid fa-droplet"></i></div>
+                  <div class="advice-title">
+                    <h4>Conservation Quick-Wins</h4>
+                    <span>High ROI habits</span>
+                  </div>
+                </div>
+                <div class="advice-body" id="adviceConservationBody">
+                  <!-- Dynamically updated -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ======================================================== -->
+        <!-- VIEW 8: REPORTS & DOWNLOADS (CSV & PRINT/PDF)           -->
+        <!-- ======================================================== -->
+        <section class="tab-pane" id="view-reports">
+
+          <div class="report-wrapper dashboard-card" id="printableReport">
+
+            <div class="report-header">
+              <div class="report-brand">
+                <i class="fa-solid fa-cloud-showers-water report-icon"></i>
+                <div>
+                  <h2>RainSmart Water Audit & Feasibility Assessment</h2>
+                  <span class="report-date" id="reportGeneratedDate">Generated: Real-Time</span>
+                </div>
+              </div>
+              <div class="report-actions-no-print">
+                <button class="btn btn-secondary" id="btnDownloadAuditCSV">
+                  <i class="fa-solid fa-file-csv"></i> Download CSV Audit
+                </button>
+                <button class="btn btn-primary" onclick="window.print()">
+                  <i class="fa-solid fa-print"></i> Print / Save as PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Report KPI Grid -->
+            <div class="report-summary-boxes">
+              <div class="rep-box">
+                <span class="rep-lbl">Annual Rain Potential</span>
+                <strong class="rep-val" id="repAnnualPotential">171,000 Liters</strong>
+                <span class="rep-sub">Based on 950mm local rain</span>
+              </div>
+              <div class="rep-box">
+                <span class="rep-lbl">Annual Cost Offset</span>
+                <strong class="rep-val" id="repCostOffset">₹ 17,100 / yr</strong>
+                <span class="rep-sub">Municipal tanker benchmark</span>
+              </div>
+              <div class="rep-box">
+                <span class="rep-lbl">Aquifer Groundwater Recharged</span>
+                <strong class="rep-val" id="repAquiferRecharge">45,600 Liters</strong>
+                <span class="rep-sub">Diverted via percolation pit</span>
+              </div>
+              <div class="rep-box">
+                <span class="rep-lbl">Carbon Footprint Saved</span>
+                <strong class="rep-val" id="repCarbonSaved">128 kg CO₂e</strong>
+                <span class="rep-sub">Avoided pumping energy</span>
+              </div>
+            </div>
+
+            <!-- Report Sections -->
+            <div class="report-details-grid">
+              <div class="rep-section">
+                <h4><i class="fa-solid fa-sliders"></i> Hydrological Specifications</h4>
+                <table class="report-table">
+                  <tbody>
+                    <tr>
+                      <td>Projected Roof Catchment Area</td>
+                      <td id="repRoofArea">200 m²</td>
+                    </tr>
+                    <tr>
+                      <td>Surface Runoff Coefficient (C)</td>
+                      <td id="repRunoffC">0.90 (Corrugated Metal)</td>
+                    </tr>
+                    <tr>
+                      <td>Design Storm Rainfall Depth (R)</td>
+                      <td id="repRainfallR">65 mm</td>
+                    </tr>
+                    <tr>
+                      <td>Calculated Net Harvest Volume</td>
+                      <td id="repNetHarvest">11,400 Liters</td>
+                    </tr>
+                    <tr>
+                      <td>Storage Reservoir Capacity</td>
+                      <td id="repStorageCap">10,000 Liters</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="rep-section">
+                <h4><i class="fa-solid fa-users"></i> Demographics & Usage Autonomy</h4>
+                <table class="report-table">
+                  <tbody>
+                    <tr>
+                      <td>Resident Occupants</td>
+                      <td id="repOccupants">4 Persons</td>
+                    </tr>
+                    <tr>
+                      <td>Per Capita Daily Demand</td>
+                      <td id="repPerCapita">135 Liters/person/day</td>
+                    </tr>
+                    <tr>
+                      <td>Total Daily Household Demand</td>
+                      <td id="repTotalDaily">540 Liters/day</td>
+                    </tr>
+                    <tr>
+                      <td>Available Off-Grid Autonomy</td>
+                      <td id="repAutonomyDays">12.6 Days</td>
+                    </tr>
+                    <tr>
+                      <td>Annual Self-Sufficiency Index</td>
+                      <td id="repSufficiencyPct">86.8%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Certified Recommendation Footer -->
+            <div class="report-certification-card">
+              <div class="cert-icon"><i class="fa-solid fa-award"></i></div>
+              <div class="cert-content">
+                <strong>RainSmart Feasibility Rating: Grade A (Highly Recommended)</strong>
+                <p>
+                  This catchment provides substantial urban water independence. Installing a first-flush diverter and an
+                  interconnected secondary percolation recharge pit is projected to amortize capital costs in 1.4 years
+                  while replenishing local urban water tables.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </div> <!-- /content-body -->
+
+    </main>
+
+  </div> <!-- /app-container -->
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Custom Application Script -->
+  <script src="script.js"></script>
+</body>
+
+</html>
